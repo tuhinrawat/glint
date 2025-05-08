@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/widgets/nav_bar.dart';
+import '../../models/itinerary.dart';
+import '../../services/itinerary_service.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final ItineraryService itineraryService;
+
+  const HomePage({
+    super.key,
+    required this.itineraryService,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+  final ScrollController _scrollController = ScrollController();
   final destinations = [
     {
       'name': 'Goa',
@@ -401,80 +410,80 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Dashboard
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
-                  child: Row(
-                    children: [
-                      // Upcoming Trip Card
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: Colors.white.withOpacity(0.12)),
+                // Destinations
+                Container(
+                  height: 160,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: destinations.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        width: 120,
+                        margin: const EdgeInsets.only(right: 15),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(25),
+                          image: DecorationImage(
+                            image: CachedNetworkImageProvider(destinations[index]['image'] as String),
+                            fit: BoxFit.cover,
+                            colorFilter: ColorFilter.mode(
+                              Colors.black.withOpacity(0.2),
+                              BlendMode.darken,
+                            ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.flight_takeoff, color: Colors.tealAccent.shade100, size: 22),
-                                  const SizedBox(width: 6),
-                                  Text('Upcoming', style: TextStyle(color: Colors.teal.shade800, fontWeight: FontWeight.bold, fontSize: 13)),
-                                ],
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(25),
+                                    bottomRight: Radius.circular(25),
+                                  ),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withOpacity(0.7),
+                                    ],
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      destinations[index]['name'] as String,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      destinations[index]['subtitle'] as String,
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.8),
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(height: 6),
-                              Text(upcomingTrip['destination'] as String, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
-                              const SizedBox(height: 2),
-                              Text('in ${(upcomingTrip['date'] as DateTime).difference(DateTime.now()).inDays} days', style: TextStyle(color: Colors.black54, fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Total Trips
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: Colors.white.withOpacity(0.12)),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(Icons.map, color: Colors.purpleAccent.shade100, size: 22),
-                            const SizedBox(height: 4),
-                            Text('$totalTrips', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
-                            const SizedBox(height: 2),
-                            Text('Trips', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                            ),
                           ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Saved Places
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: Colors.white.withOpacity(0.12)),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(Icons.bookmark, color: Colors.blueAccent.shade100, size: 22),
-                            const SizedBox(height: 4),
-                            Text('$savedPlaces', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
-                            const SizedBox(height: 2),
-                            Text('Saved', style: TextStyle(color: Colors.black54, fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
-                // Feed
+                // Dashboard and Feed
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
@@ -552,6 +561,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             bottom: 24,
             right: 24,
             child: FloatingActionButton(
+              heroTag: 'homePageFAB',
               backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

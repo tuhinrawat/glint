@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "64477076913",
+    "project_id": "glint-1990",
+    "storage_bucket": "glint-1990.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:64477076913:android:b4390480d80ffd4d36f190",
+        "android_client_info": {
+          "package_name": "com.example.travel_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDp0l5OJ4UxziMnDgo5E-NoCFJlmIggLzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

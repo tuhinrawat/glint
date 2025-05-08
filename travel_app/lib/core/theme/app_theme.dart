@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Primary Colors
@@ -13,6 +14,33 @@ class AppTheme {
   static const Color textPrimaryColor = Colors.white;
   static const Color textSecondaryColor = Color(0xFFB0B0B0);
   static const Color textTertiaryColor = Color(0xFF808080);
+
+  // Brand Typography
+  static TextStyle get brandFont => GoogleFonts.kumbhSans(
+    fontWeight: FontWeight.bold,
+    color: textPrimaryColor,
+  );
+  
+  static TextStyle get brandFontLarge => GoogleFonts.kumbhSans(
+    fontWeight: FontWeight.bold,
+    fontSize: fontSizeDisplay,
+    color: textPrimaryColor,
+    letterSpacing: 0.5,
+  );
+  
+  static TextStyle get brandFontMedium => GoogleFonts.kumbhSans(
+    fontWeight: FontWeight.bold,
+    fontSize: fontSizeXLarge,
+    color: textPrimaryColor,
+    letterSpacing: 0.5,
+  );
+  
+  static TextStyle get brandFontSmall => GoogleFonts.kumbhSans(
+    fontWeight: FontWeight.bold,
+    fontSize: fontSizeLarge,
+    color: textPrimaryColor,
+    letterSpacing: 0.5,
+  );
 
   // Component Sizes
   static const double iconSizeSmall = 16.0;

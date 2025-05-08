@@ -1,6 +1,199 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
+import '../../models/itinerary.dart';
 import '../../models/gang.dart';
-import 'dart:math';
+import '../../models/travel_preferences.dart';
+import '../../models/user_level.dart';
+import '../../services/gang_service.dart';
+import '../../services/gamification_service.dart';
+import '../../services/auth_service.dart';
+import '../gang/gang_edit_dialog.dart';
+import '../gang/gang_invite_dialog.dart';
+import '../gang/travel_preferences_editor.dart';
+import '../onboarding/onboarding_page.dart';
+import 'preferences_editor.dart';
+import 'preferences_viewer.dart';
+import 'level_progression_card.dart';
+import 'achievements_page.dart';
+
+class ProfileEditDialog extends StatefulWidget {
+  final Map<String, dynamic> userData;
+  
+  const ProfileEditDialog({required this.userData, super.key});
+  
+  @override
+  State<ProfileEditDialog> createState() => _ProfileEditDialogState();
+}
+
+class _ProfileEditDialogState extends State<ProfileEditDialog> {
+  late TextEditingController _nameController;
+  late TextEditingController _locationController;
+  late TextEditingController _bioController;
+  late TextEditingController _avatarController;
+  late TextEditingController _ageController;
+  
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.userData['name']);
+    _locationController = TextEditingController(text: widget.userData['location']);
+    _bioController = TextEditingController(text: widget.userData['bio']);
+    _avatarController = TextEditingController(text: widget.userData['avatar']);
+    _ageController = TextEditingController(text: '25'); // Default age
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: const Color(0xFF23243B),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Edit Profile',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _nameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Name',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                prefixIcon: Icon(Icons.person, color: Colors.grey[400]),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _ageController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Age',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                prefixIcon: Icon(Icons.cake, color: Colors.grey[400]),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _locationController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Location',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                prefixIcon: Icon(Icons.location_on, color: Colors.grey[400]),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _bioController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Bio',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                prefixIcon: Icon(Icons.edit, color: Colors.grey[400]),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                ),
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _avatarController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Profile Picture URL',
+                labelStyle: TextStyle(color: Colors.grey[400]),
+                prefixIcon: Icon(Icons.image, color: Colors.grey[400]),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[700]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey[400]),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    final updatedData = Map<String, dynamic>.from(widget.userData);
+                    updatedData['name'] = _nameController.text.trim();
+                    updatedData['location'] = _locationController.text.trim();
+                    updatedData['bio'] = _bioController.text.trim();
+                    updatedData['avatar'] = _avatarController.text.trim();
+                    Navigator.pop(context, updatedData);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text('Save'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -10,305 +203,578 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  List<Gang> gangs = [
-    Gang(
-      id: '1',
-      name: 'The Adventurers',
-      members: [
-        GangMember(name: 'Aditi Sharma', age: 27, gender: 'Female', email: 'aditi@email.com', phone: '1234567890', avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg'),
-        GangMember(name: 'Rahul Verma', age: 29, gender: 'Male', email: 'rahul@email.com', phone: '9876543210', avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg'),
-      ],
-    ),
-    Gang(
-      id: '2',
-      name: 'Foodies',
-      members: [
-        GangMember(name: 'Priya Singh', age: 25, gender: 'Female', email: 'priya@email.com', phone: '5551234567', avatarUrl: 'https://randomuser.me/api/portraits/women/65.jpg'),
-      ],
-    ),
-  ];
+  final String currentUserId = '123';
+  final GangService _gangService = GangService();
+  final GamificationService _gamificationService = GamificationService();
+  bool _isLoadingGangs = true;
+  bool _isLoadingLevel = true;
+  List<Gang> _myGangs = [];
+  List<GangInvitation> _pendingInvitations = [];
+  late TravelPreferences _preferences;
+  
+  // Level data
+  late UserLevel _currentLevel;
+  late UserLevel _nextLevel;
+  late double _progress;
+  int _totalPoints = 0;
 
-  void _addGang() async {
-    final newGang = await showDialog<Gang>(
-      context: context,
-      builder: (ctx) => GangEditDialog(),
-    );
-    if (newGang != null) {
-      setState(() => gangs.add(newGang));
+  // Dummy user data
+  Map<String, dynamic> userData = {
+    'id': '123',
+    'name': 'Aditi Sharma',
+    'email': 'aditi.sharma@example.com',
+    'avatar': 'https://randomuser.me/api/portraits/women/44.jpg',
+    'location': 'Mumbai, India',
+    'bio': 'Adventure seeker | Photography enthusiast | Travel blogger',
+    'totalTrips': 12,
+    'countries': 5,
+    'followers': 1240,
+    'following': 890,
+    'totalSpent': 245000,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGangsAndInvitations();
+    _loadUserLevel();
+    // Initialize with default preferences - in a real app, this would come from a user service
+    _preferences = TravelPreferences.defaultPreferences();
+    
+    // Update userData with auth info if available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      if (authService.isLoggedIn && authService.userId != null) {
+        setState(() {
+          userData['id'] = authService.userId;
+          if (authService.userName != null) userData['name'] = authService.userName;
+          if (authService.userEmail != null) userData['email'] = authService.userEmail;
+          if (authService.userAvatar != null) userData['avatar'] = authService.userAvatar;
+        });
+      }
+    });
+  }
+
+  Future<void> _loadUserLevel() async {
+    setState(() => _isLoadingLevel = true);
+    try {
+      final currentLevel = await _gamificationService.getUserLevel();
+      final nextLevel = await _gamificationService.getNextLevel();
+      final progress = await _gamificationService.getProgressToNextLevel();
+      final points = await _gamificationService.getUserPoints();
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _currentLevel = currentLevel;
+        _nextLevel = nextLevel;
+        _progress = progress;
+        _totalPoints = points;
+        _isLoadingLevel = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading level: $e');
+      if (!mounted) return;
+      
+      setState(() => _isLoadingLevel = false);
     }
   }
 
-  void _editGang(int idx) async {
-    final editedGang = await showDialog<Gang>(
-      context: context,
-      builder: (ctx) => GangEditDialog(existing: gangs[idx]),
-    );
-    if (editedGang != null) {
-      setState(() => gangs[idx] = editedGang);
+  Future<void> _loadGangsAndInvitations() async {
+    if (!mounted) return;
+    
+    setState(() => _isLoadingGangs = true);
+    try {
+      final gangs = await _gangService.getUserGangs(currentUserId);
+      final invitations = await _gangService.getPendingInvitations(userData['email'] ?? '');
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _myGangs = gangs;
+        _pendingInvitations = invitations;
+        _isLoadingGangs = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading gangs: $e');
+      if (!mounted) return;
+      
+      setState(() => _isLoadingGangs = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load gangs: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  void _deleteGang(int idx) {
-    setState(() => gangs.removeAt(idx));
+  void _createGang() async {
+    final result = await showDialog<Gang>(
+      context: context,
+      builder: (context) => const GangEditDialog(),
+    );
+    if (result != null) {
+      await _gangService.saveGang(currentUserId, result);
+      _loadGangsAndInvitations();
+    }
+  }
+
+  void _editGang(Gang gang) async {
+    final result = await showDialog<Gang>(
+      context: context,
+      builder: (context) => GangEditDialog(existing: gang),
+    );
+    if (result != null) {
+      await _gangService.saveGang(currentUserId, result);
+      _loadGangsAndInvitations();
+    }
+  }
+
+  void _inviteToGang(Gang gang) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => GangInviteDialog(
+        gangId: gang.id,
+        gangName: gang.name,
+        inviterName: userData['name'],
+      ),
+    );
+    
+    if (result == true) {
+      _loadGangsAndInvitations();
+    }
+  }
+
+  void _editPreferences() async {
+    final result = await Navigator.push<TravelPreferences>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PreferencesEditor(
+          initialPreferences: _preferences,
+          onSave: (newPreferences) {
+            setState(() {
+              _preferences = newPreferences;
+            });
+          },
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _preferences = result;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Profile', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                IconButton(
-                  icon: const Icon(Icons.group_add),
-                  tooltip: 'Create New Gang',
-                  onPressed: _addGang,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text('My Gangs', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            ...gangs.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final gang = entry.value;
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ExpansionTile(
-                  title: Text(gang.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+    final authService = Provider.of<AuthService>(context, listen: false);
+    
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Profile Header
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    ...gang.members.map((m) => ListTile(
-                          leading: m.avatarUrl != null ? CircleAvatar(backgroundImage: NetworkImage(m.avatarUrl!)) : const CircleAvatar(child: Icon(Icons.person)),
-                          title: Text(m.name),
-                          subtitle: Text('Age: ${m.age}, Gender: ${m.gender}${m.email != null ? '\nEmail: ${m.email}' : ''}${m.phone != null ? '\nPhone: ${m.phone}' : ''}'),
-                        )),
-                    ButtonBar(
-                      children: [
-                        TextButton.icon(
-                          icon: const Icon(Icons.edit),
-                          label: const Text('Edit'),
-                          onPressed: () => _editGang(idx),
-                        ),
-                        TextButton.icon(
-                          icon: const Icon(Icons.delete),
-                          label: const Text('Delete'),
-                          onPressed: () => _deleteGang(idx),
-                        ),
-                      ],
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundImage: userData['avatar'] != null 
+                          ? NetworkImage(userData['avatar'])
+                          : null,
+                      child: userData['avatar'] == null
+                          ? const Icon(Icons.person)
+                          : null,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userData['name'] ?? 'Anonymous User',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            userData['email'] ?? 'No email provided',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                            ),
+                          ),
+                          if (!_isLoadingLevel)
+                            Chip(
+                              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                              label: Text(
+                                _currentLevel.title,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              avatar: Icon(
+                                Icons.psychology,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 10,
+                              ),
+                              labelPadding: EdgeInsets.zero,
+                              padding: const EdgeInsets.all(2),
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-}
+              ),
 
-class GangEditDialog extends StatefulWidget {
-  final Gang? existing;
-  const GangEditDialog({this.existing, super.key});
-
-  @override
-  State<GangEditDialog> createState() => _GangEditDialogState();
-}
-
-class _GangEditDialogState extends State<GangEditDialog> {
-  late TextEditingController _nameController;
-  List<GangMember> members = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.existing?.name ?? '');
-    members = widget.existing?.members.map((m) => GangMember(
-      name: m.name,
-      age: m.age,
-      gender: m.gender,
-      email: m.email,
-      phone: m.phone,
-      avatarUrl: m.avatarUrl,
-    )).toList() ?? [];
-  }
-
-  void _addMember() async {
-    final newMember = await showDialog<GangMember>(
-      context: context,
-      builder: (ctx) => GangMemberEditDialog(),
-    );
-    if (newMember != null) {
-      setState(() => members.add(newMember));
-    }
-  }
-
-  void _editMember(int idx) async {
-    final edited = await showDialog<GangMember>(
-      context: context,
-      builder: (ctx) => GangMemberEditDialog(existing: members[idx]),
-    );
-    if (edited != null) {
-      setState(() => members[idx] = edited);
-    }
-  }
-
-  void _deleteMember(int idx) {
-    setState(() => members.removeAt(idx));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.existing == null ? 'Create Gang' : 'Edit Gang'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Gang Name'),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Members', style: TextStyle(fontWeight: FontWeight.bold)),
-                IconButton(
-                  icon: const Icon(Icons.person_add),
-                  tooltip: 'Add Member',
-                  onPressed: _addMember,
-                ),
-              ],
-            ),
-            ...members.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final m = entry.value;
-              return ListTile(
-                leading: m.avatarUrl != null ? CircleAvatar(backgroundImage: NetworkImage(m.avatarUrl!)) : const CircleAvatar(child: Icon(Icons.person)),
-                title: Text(m.name),
-                subtitle: Text('Age: ${m.age}, Gender: ${m.gender}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+              // Stats Row
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    IconButton(icon: const Icon(Icons.edit), onPressed: () => _editMember(idx)),
-                    IconButton(icon: const Icon(Icons.delete), onPressed: () => _deleteMember(idx)),
+                    _buildStat('Trips', (userData['totalTrips'] ?? 0).toString()),
+                    _buildStat('Countries', (userData['countries'] ?? 0).toString()),
+                    _buildStat('Followers', (userData['followers'] ?? 0).toString()),
+                    _buildStat('Points', _totalPoints.toString()),
                   ],
                 ),
-              );
-            }),
-          ],
+              ),
+
+              // Level Progression
+              if (_isLoadingLevel)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else
+                LevelProgressionCard(
+                  currentLevel: _currentLevel,
+                  nextLevel: _nextLevel,
+                  progress: _progress,
+                  totalPoints: _totalPoints,
+                ),
+
+              const Divider(height: 32),
+
+              // Travel Gangs Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Travel Gangs',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _createGang,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Create Gang'),
+                    ),
+                  ],
+                ),
+              ),
+
+              if (_isLoadingGangs)
+                const Center(child: CircularProgressIndicator())
+              else ...[
+                // Pending Invitations
+                if (_pendingInvitations.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Card(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Text(
+                              'Pending Invitations',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _pendingInvitations.length,
+                            itemBuilder: (context, index) {
+                              final invitation = _pendingInvitations[index];
+                              return ListTile(
+                                title: Text(invitation.gangName),
+                                subtitle: Text('From: ${invitation.inviterName}'),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextButton(
+                                      onPressed: () => _handleInvitation(invitation, true),
+                                      child: const Text('Accept'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => _handleInvitation(invitation, false),
+                                      child: const Text('Decline'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // My Gangs
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _myGangs.length,
+                  itemBuilder: (context, index) {
+                    final gang = _myGangs[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ListTile(
+                            title: Text(
+                              gang.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text('${gang.members.length} members'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.person_add),
+                                  onPressed: () => _inviteToGang(gang),
+                                  tooltip: 'Invite Member',
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () => _editGang(gang),
+                                  tooltip: 'Edit Gang',
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Members',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: gang.members.map((member) {
+                                    return Chip(
+                                      avatar: CircleAvatar(
+                                        backgroundImage: NetworkImage(
+                                          member.avatarUrl ?? 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(member.name)}&background=random'
+                                        ),
+                                      ),
+                                      label: Text(member.name),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+
+              const Divider(height: 32),
+
+              // Travel Preferences Section
+              PreferencesViewer(
+                preferences: _preferences,
+                isEditable: true,
+                onEdit: _editPreferences,
+              ),
+
+              // Menu Items
+              _buildMenuItem(
+                context,
+                icon: Icons.emoji_events_outlined,
+                title: 'View Achievements',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AchievementsPage(),
+                    ),
+                  );
+                },
+              ),
+              _buildMenuItem(
+                context,
+                icon: Icons.person_outline,
+                title: 'Edit Profile',
+                onTap: () {},
+              ),
+              _buildMenuItem(
+                context,
+                icon: Icons.map_outlined,
+                title: 'My Trips',
+                onTap: () {},
+              ),
+              _buildMenuItem(
+                context,
+                icon: Icons.settings_outlined,
+                title: 'Settings',
+                onTap: () {},
+              ),
+              _buildMenuItem(
+                context,
+                icon: Icons.help_outline,
+                title: 'Help & Support',
+                onTap: () {},
+              ),
+              _buildMenuItem(
+                context,
+                icon: Icons.logout,
+                title: 'Logout',
+                onTap: () => _handleLogout(context),
+                isDestructive: true,
+              ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+    );
+  }
+
+  Widget _buildStat(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            if (_nameController.text.trim().isEmpty || members.isEmpty) return;
-            Navigator.pop(context, Gang(
-              id: widget.existing?.id ?? Random().nextInt(100000).toString(),
-              name: _nameController.text.trim(),
-              members: members,
-            ));
-          },
-          child: Text(widget.existing == null ? 'Create' : 'Save'),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.grey,
+          ),
         ),
       ],
     );
   }
-}
 
-class GangMemberEditDialog extends StatefulWidget {
-  final GangMember? existing;
-  const GangMemberEditDialog({this.existing, super.key});
-
-  @override
-  State<GangMemberEditDialog> createState() => _GangMemberEditDialogState();
-}
-
-class _GangMemberEditDialogState extends State<GangMemberEditDialog> {
-  late TextEditingController _nameController;
-  late TextEditingController _ageController;
-  late TextEditingController _genderController;
-  late TextEditingController _emailController;
-  late TextEditingController _phoneController;
-  late TextEditingController _avatarController;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.existing?.name ?? '');
-    _ageController = TextEditingController(text: widget.existing?.age.toString() ?? '');
-    _genderController = TextEditingController(text: widget.existing?.gender ?? '');
-    _emailController = TextEditingController(text: widget.existing?.email ?? '');
-    _phoneController = TextEditingController(text: widget.existing?.phone ?? '');
-    _avatarController = TextEditingController(text: widget.existing?.avatarUrl ?? '');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.existing == null ? 'Add Member' : 'Edit Member'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            TextField(
-              controller: _ageController,
-              decoration: const InputDecoration(labelText: 'Age'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _genderController,
-              decoration: const InputDecoration(labelText: 'Gender'),
-            ),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _phoneController,
-              decoration: const InputDecoration(labelText: 'Phone'),
-            ),
-            TextField(
-              controller: _avatarController,
-              decoration: const InputDecoration(labelText: 'Avatar URL'),
-            ),
-          ],
+  Widget _buildMenuItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isDestructive ? Colors.red : Colors.white,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isDestructive ? Colors.red : Colors.white,
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            if (_nameController.text.trim().isEmpty || _ageController.text.trim().isEmpty || _genderController.text.trim().isEmpty) return;
-            Navigator.pop(context, GangMember(
-              name: _nameController.text.trim(),
-              age: int.tryParse(_ageController.text.trim()) ?? 0,
-              gender: _genderController.text.trim(),
-              email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-              phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-              avatarUrl: _avatarController.text.trim().isEmpty ? null : _avatarController.text.trim(),
-            ));
-          },
-          child: Text(widget.existing == null ? 'Add' : 'Save'),
-        ),
-      ],
+      trailing: const Icon(
+        Icons.chevron_right,
+        color: Colors.grey,
+      ),
+      onTap: onTap,
     );
+  }
+
+  Future<void> _handleInvitation(GangInvitation invitation, bool accept) async {
+    try {
+      if (accept) {
+        await _gangService.acceptInvitation(invitation.id, userData['email']);
+      } else {
+        await _gangService.declineInvitation(invitation.id, userData['email']);
+      }
+      _loadGangsAndInvitations();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to ${accept ? 'accept' : 'decline'} invitation'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _handleLogout(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirm == true) {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      await authService.logout();
+      
+      if (!mounted) return;
+      
+      // Navigate to onboarding page after logout
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const OnboardingPage()),
+        (route) => false, // Remove all previous routes
+      );
+    }
   }
 } 

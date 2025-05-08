@@ -210,6 +210,7 @@ class _MyTripsPageState extends State<MyTripsPage> with SingleTickerProviderStat
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'myTripsPageFAB',
         onPressed: () {
           Navigator.push(
             context,

@@ -26,12 +26,17 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
   AnimationController? _animationController;
   Animation<Offset>? _slideAnimation;
 
+  // Add new properties for social feed
+  final List<TravelPost> _socialFeed = [];
+  final List<TravelStory> _stories = [];
+
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
     _addBotMessage("Hi! I'm your travel planning assistant. Where would you like to go?");
     _generateMockItineraries();
+    _generateMockSocialFeed();
   }
 
   void _initializeAnimations() {
@@ -174,8 +179,8 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
   void _showBookingSheet(BuildContext context, String type, Itinerary itinerary) async {
     final destination = itinerary.destination;
     final startDate = itinerary.startDate;
-    final endDate = itinerary.startDate.add(Duration(days: itinerary.days.length));
-    final groupSize = itinerary.groupSize;
+    final endDate = itinerary.startDate.add(Duration(days: itinerary.dayPlans.length));
+    final groupSize = itinerary.numberOfPeople;
     
     // Calculate costs as integers
     final flightCost = itinerary.suggestedFlightCost;
@@ -600,12 +605,13 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
       final destinations = ["Goa", "Manali", "Kerala", "Jaipur", "Ladakh"];
       final destination = destinations[i % destinations.length];
       final likes = 50 + i * 17;
-      final totalCost = 40000 + i * 8000;
+      final totalCost = (40000 + i * 8000).toDouble();
+      final startDate = DateTime.now().add(Duration(days: i * 3));
       
       // Calculate costs as integers
-      final flightCost = ((totalCost * 0.4) as double).round();
-      final hotelCostPerNight = ((totalCost * 0.4 / 5) as double).round();
-      final cabCostPerDay = ((totalCost * 0.2 / 5) as double).round();
+      final flightCost = (totalCost * 0.4).round();
+      final hotelCostPerNight = (totalCost * 0.4 / 5).round();
+      final cabCostPerDay = (totalCost * 0.2 / 5).round();
       
       final hotels = hotelNames[destination] ?? ["Local Hotel"];
       final attractions = localAttractions[destination] ?? ["Local Attraction"];
@@ -634,10 +640,12 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
       ];
 
       final days = List.generate(5, (d) {
+        final currentDate = startDate.add(Duration(days: d));
         if (d == 0) {
           // First day - arrival and check-in
           return {
             "day": d + 1,
+            "date": currentDate.toIso8601String(),
             "flight": {
               "from": "Mumbai",
               "to": destination,
@@ -661,11 +669,13 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
               "Hotel Check-in",
               "Evening: ${attractions[0]} visit",
             ],
+            "totalCost": flightCost + hotelCostPerNight + (cabCostPerDay * 0.3).round(),
           };
         } else if (d == 4) {
           // Last day - checkout and departure
           return {
             "day": d + 1,
+            "date": currentDate.toIso8601String(),
             "hotel": {
               "name": hotels[0],
               "checkOut": "11:00 AM",
@@ -689,11 +699,13 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
               "Hotel Check-out",
               "Airport Transfer",
             ],
+            "totalCost": flightCost + hotelCostPerNight + (cabCostPerDay * 0.3).round(),
           };
         } else {
           // Middle days - local activities
           return {
             "day": d + 1,
+            "date": currentDate.toIso8601String(),
             "hotel": {
               "name": hotels[0],
               "cost": hotelCostPerNight,
@@ -708,19 +720,25 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
               "Afternoon: Local cuisine experience",
               "Evening: Cultural show/Local entertainment",
             ],
+            "totalCost": hotelCostPerNight + cabCostPerDay,
           };
         }
       });
 
       return {
-        "itinerary": Itinerary(
-          destination: destination,
-          days: days,
-          totalCost: totalCost,
-          travelType: "Leisure",
-          groupSize: 2 + i,
-          startDate: DateTime.now().add(Duration(days: i * 3)),
-        ),
+        "itinerary": {
+          "id": 'dummy_${i}',
+          "destination": destination,
+          "startDate": startDate.toIso8601String(),
+          "days": days,
+          "totalCost": totalCost,
+          "groupSize": 2 + i,
+          "travelType": "Leisure",
+          "images": [
+            "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+            "https://images.unsplash.com/photo-1512100356356-de1b84283e18"
+          ]
+        },
         "likes": likes,
         "reviews": reviews,
         "health": health,
@@ -728,7 +746,234 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
         "wellBeing": wellBeing,
       };
     });
+    
     setState(() => _isLoading = false);
+  }
+
+  // Add new method to generate mock social feed data
+  void _generateMockSocialFeed() {
+    _stories.addAll([
+      TravelStory(
+        username: "sarah_travels",
+        userAvatar: "https://randomuser.me/api/portraits/women/1.jpg",
+        location: "Bali, Indonesia",
+        imageUrl: "https://images.unsplash.com/photo-1537996194471-e657df975ab4",
+        isViewed: false,
+      ),
+      TravelStory(
+        username: "mike_explorer",
+        userAvatar: "https://randomuser.me/api/portraits/men/2.jpg",
+        location: "Santorini, Greece",
+        imageUrl: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff",
+        isViewed: false,
+      ),
+      // Add more stories...
+    ]);
+
+    _socialFeed.addAll([
+      TravelPost(
+        username: "travel_enthusiast",
+        userAvatar: "https://randomuser.me/api/portraits/women/3.jpg",
+        location: "Machu Picchu, Peru",
+        imageUrl: "https://images.unsplash.com/photo-1587595431973-160d0d94add1",
+        caption: "Finally made it to this wonder of the world! The view is breathtaking 😍 #MachuPicchu #Peru #Travel",
+        likes: 1234,
+        comments: 89,
+        timeAgo: "2 hours ago",
+      ),
+      TravelPost(
+        username: "wanderlust_diaries",
+        userAvatar: "https://randomuser.me/api/portraits/men/4.jpg",
+        location: "Venice, Italy",
+        imageUrl: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9",
+        caption: "Getting lost in the beautiful streets of Venice 🇮🇹 #Venice #Italy #TravelLife",
+        likes: 2567,
+        comments: 156,
+        timeAgo: "5 hours ago",
+      ),
+      // Add more posts...
+    ]);
+  }
+
+  // Add new widget to build stories section
+  Widget _buildStoriesSection() {
+    return Container(
+      height: 100,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _stories.length + 1, // +1 for "Your Story"
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return _buildStoryItem(
+              "Your Story",
+              "https://randomuser.me/api/portraits/lego/1.jpg",
+              "",
+              true,
+              isAdd: true,
+            );
+          }
+          final story = _stories[index - 1];
+          return _buildStoryItem(
+            story.username,
+            story.userAvatar,
+            story.location,
+            story.isViewed,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStoryItem(String username, String avatar, String location, bool viewed, {bool isAdd = false}) {
+    return Container(
+      width: 80,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: !viewed ? LinearGradient(
+                    colors: [Colors.purple, Colors.pink, Colors.orange],
+                  ) : null,
+                  border: viewed ? Border.all(color: Colors.grey, width: 2) : null,
+                ),
+                child: CircleAvatar(
+                  radius: 32,
+                  backgroundImage: NetworkImage(avatar),
+                ),
+              ),
+              if (isAdd)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add, size: 14, color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            username.length > 10 ? '${username.substring(0, 8)}...' : username,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: viewed ? FontWeight.normal : FontWeight.bold,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Add new widget to build social feed posts
+  Widget _buildSocialFeedPost(TravelPost post) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: const Color(0xFF23243B),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            leading: CircleAvatar(backgroundImage: NetworkImage(post.userAvatar)),
+            title: Text(post.username, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            subtitle: Text(post.location, style: const TextStyle(color: Colors.white70)),
+            trailing: IconButton(
+              icon: const Icon(Icons.more_vert, color: Colors.white),
+              onPressed: () {},
+            ),
+          ),
+          GestureDetector(
+            onDoubleTap: () {
+              // Handle double tap to like
+            },
+            child: Container(
+              height: 300,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(post.imageUrl),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.favorite_border, color: Colors.white),
+                      onPressed: () {},
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+                      onPressed: () {},
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.send_outlined, color: Colors.white),
+                      onPressed: () {},
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.bookmark_border, color: Colors.white),
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${post.likes} likes', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: post.username,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: ' ${post.caption}'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'View all ${post.comments} comments',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        post.timeAgo,
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildItineraryCardWithExtras(
@@ -739,9 +984,9 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
     required List sustainability,
     required List wellBeing,
   }) {
-    final days = itinerary.days;
-    final highlights = days.expand((d) => d['activities'] as List).toSet().take(4).toList();
-    final perPerson = (itinerary.totalCost / itinerary.groupSize).round();
+    final dayPlans = itinerary.dayPlans;
+    final highlights = dayPlans.expand((d) => d.activities.map((a) => a.name)).toSet().take(4).toList();
+    final perPerson = (itinerary.totalCost / itinerary.numberOfPeople).round();
     final PageController _pageController = PageController(viewportFraction: 0.88);
     int _currentDay = 0;
     return StatefulBuilder(
@@ -776,7 +1021,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              '${itinerary.destination} · ${days.length} Days · ${itinerary.groupSize} People',
+                              '${itinerary.destination} · ${dayPlans.length} Days · ${itinerary.numberOfPeople} People',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.white),
                             ),
                           ),
@@ -806,7 +1051,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                           Text('Total: ₹${itinerary.totalCost}  ', style: const TextStyle(fontSize: 16, color: Colors.white)),
                           const SizedBox(width: 12),
                           Icon(Icons.person, color: Colors.white54),
-                          Text('Per Person: ₹${(itinerary.totalCost / itinerary.groupSize).round()}', style: const TextStyle(fontSize: 16, color: Colors.white)),
+                          Text('Per Person: ₹${(itinerary.totalCost / itinerary.numberOfPeople).round()}', style: const TextStyle(fontSize: 16, color: Colors.white)),
                         ],
                       ),
                       const SizedBox(height: 14),
@@ -829,10 +1074,10 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                         height: 280,
                         child: PageView.builder(
                           controller: _pageController,
-                          itemCount: days.length,
+                          itemCount: dayPlans.length,
                           onPageChanged: (idx) => setState(() => _currentDay = idx),
                           itemBuilder: (context, idx) {
-                            final d = days[idx];
+                            final d = dayPlans[idx];
                             return AnimatedScale(
                               scale: idx == _currentDay ? 1.0 : 0.95,
                               duration: const Duration(milliseconds: 250),
@@ -854,18 +1099,18 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                                             children: [
                                               Icon(Icons.today, size: 22, color: Colors.white),
                                               const SizedBox(width: 10),
-                                              Text('Day ${d['day']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.white)),
+                                              Text('Day ${d.date.day}/${d.date.month}/${d.date.year}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.white)),
                                             ],
                                           ),
                                           const SizedBox(height: 12),
-                                          if (d['flight'] != null) ...[
+                                          if (d.flight != null) ...[
                                             Row(
                                               children: [
                                                 Icon(Icons.flight, size: 18, color: Colors.blueAccent.shade100),
                                                 const SizedBox(width: 8),
                                                 Expanded(
                                                   child: Text(
-                                                    '${d['flight']['airline']} - ${d['flight']['from']} to ${d['flight']['to']} (${d['flight']['time']})\n₹${d['flight']['cost']}',
+                                                    '${d.flight!.airline} - ${d.flight!.from} to ${d.flight!.to} (${d.flight!.time})\n₹${d.flight!.cost}',
                                                     style: const TextStyle(fontSize: 13, color: Colors.white70),
                                                   ),
                                                 ),
@@ -873,14 +1118,14 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                                             ),
                                             const SizedBox(height: 8),
                                           ],
-                                          if (d['hotel'] != null) ...[
+                                          if (d.hotel != null) ...[
                                             Row(
                                               children: [
                                                 Icon(Icons.hotel, size: 18, color: Colors.purpleAccent.shade100),
                                                 const SizedBox(width: 8),
                                                 Expanded(
                                                   child: Text(
-                                                    '${d['hotel']['name']} ${d['hotel']['checkIn'] != null ? '(Check-in: ${d['hotel']['checkIn']})' : d['hotel']['checkOut'] != null ? '(Check-out: ${d['hotel']['checkOut']})' : ''}\n₹${d['hotel']['cost']} per night',
+                                                    '${d.hotel!.name} ${d.hotel!.checkIn != null ? '(Check-in: ${d.hotel!.checkIn})' : d.hotel!.checkOut != null ? '(Check-out: ${d.hotel!.checkOut})' : ''}\n₹${d.hotel!.costPerNight} per night',
                                                     style: const TextStyle(fontSize: 13, color: Colors.white70),
                                                   ),
                                                 ),
@@ -888,16 +1133,16 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                                             ),
                                             const SizedBox(height: 8),
                                           ],
-                                          if (d['cab'] != null) ...[
+                                          if (d.cab != null) ...[
                                             Row(
                                               children: [
                                                 Icon(Icons.local_taxi, size: 18, color: Colors.amberAccent.shade100),
                                                 const SizedBox(width: 8),
                                                 Expanded(
                                                   child: Text(
-                                                    d['cab']['duration'] != null
-                                                        ? '${d['cab']['type']} - ${d['cab']['duration']}\n₹${d['cab']['cost']}'
-                                                        : '${d['cab']['type']} - ${d['cab']['from']} to ${d['cab']['to']}\n₹${d['cab']['cost']}',
+                                                    d.cab!.duration != null
+                                                        ? '${d.cab!.type} - ${d.cab!.duration}\n₹${d.cab!.cost}'
+                                                        : '${d.cab!.type} - ${d.cab!.from} to ${d.cab!.to}\n₹${d.cab!.cost}',
                                                     style: const TextStyle(fontSize: 13, color: Colors.white70),
                                                   ),
                                                 ),
@@ -913,7 +1158,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                                           ),
                                           const SizedBox(height: 4),
                                           ...List.generate(
-                                            (d['activities'] as List).length,
+                                            d.activities.length,
                                             (i) => Padding(
                                               padding: const EdgeInsets.symmetric(vertical: 2),
                                               child: Row(
@@ -922,7 +1167,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                                                   const SizedBox(width: 8),
                                                   Expanded(
                                                     child: Text(
-                                                      d['activities'][i],
+                                                      d.activities[i].name,
                                                       style: const TextStyle(fontSize: 13, color: Colors.white70),
                                                     ),
                                                   ),
@@ -945,7 +1190,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: List.generate(
-                            days.length,
+                            dayPlans.length,
                             (idx) => AnimatedContainer(
                               duration: const Duration(milliseconds: 250),
                               width: idx == _currentDay ? 14 : 8,
@@ -1110,7 +1355,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Text(
-                          "AI-Suggested Itineraries",
+                          "Travel Feed",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.primary,
@@ -1121,34 +1366,51 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                       IconButton(
                         icon: const Icon(Icons.refresh, size: 28),
                         color: Theme.of(context).colorScheme.primary,
-                        tooltip: "Refresh suggestions",
-                        onPressed: _generateMockItineraries,
+                        tooltip: "Refresh feed",
+                        onPressed: () {
+                          _generateMockItineraries();
+                          _generateMockSocialFeed();
+                        },
                       ),
                     ],
                   ),
                   Expanded(
                     child: _isLoading
                         ? const Center(child: CircularProgressIndicator())
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            itemCount: _suggestedItineraries.length,
-                            itemBuilder: (context, idx) {
-                              final data = _suggestedItineraries[idx];
-                              final itinerary = data["itinerary"] as Itinerary;
-                              final likes = data["likes"] as int;
-                              final reviews = data["reviews"] as List;
-                              final health = data["health"] as List;
-                              final sustainability = data["sustainability"] as List;
-                              final wellBeing = data["wellBeing"] as List;
-                              return _buildItineraryCardWithExtras(
-                                itinerary,
-                                likes: likes,
-                                reviews: reviews,
-                                health: health,
-                                sustainability: sustainability,
-                                wellBeing: wellBeing,
-                              );
-                            },
+                        : CustomScrollView(
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child: _buildStoriesSection(),
+                              ),
+                              SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    if (index < _socialFeed.length) {
+                                      return _buildSocialFeedPost(_socialFeed[index]);
+                                    }
+                                    final itineraryIndex = index - _socialFeed.length;
+                                    if (itineraryIndex >= _suggestedItineraries.length) {
+                                      return null;
+                                    }
+                                    final data = _suggestedItineraries[itineraryIndex];
+                                    final itinerary = data["itinerary"] as Itinerary;
+                                    final likes = data["likes"] as int;
+                                    final reviews = data["reviews"] as List;
+                                    final health = data["health"] as List;
+                                    final sustainability = data["sustainability"] as List;
+                                    final wellBeing = data["wellBeing"] as List;
+                                    return _buildItineraryCardWithExtras(
+                                      itinerary,
+                                      likes: likes,
+                                      reviews: reviews,
+                                      health: health,
+                                      sustainability: sustainability,
+                                      wellBeing: wellBeing,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                   ),
                 ],
@@ -1160,6 +1422,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
             right: 16,
             bottom: 16,
             child: FloatingActionButton(
+              heroTag: 'itineraryPageFAB',
               onPressed: _toggleChat,
               backgroundColor: Theme.of(context).colorScheme.primary,
               child: Icon(
@@ -1319,6 +1582,45 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
       ),
     );
   }
+}
+
+// Add new classes for social feed data models
+class TravelStory {
+  final String username;
+  final String userAvatar;
+  final String location;
+  final String imageUrl;
+  final bool isViewed;
+
+  TravelStory({
+    required this.username,
+    required this.userAvatar,
+    required this.location,
+    required this.imageUrl,
+    required this.isViewed,
+  });
+}
+
+class TravelPost {
+  final String username;
+  final String userAvatar;
+  final String location;
+  final String imageUrl;
+  final String caption;
+  final int likes;
+  final int comments;
+  final String timeAgo;
+
+  TravelPost({
+    required this.username,
+    required this.userAvatar,
+    required this.location,
+    required this.imageUrl,
+    required this.caption,
+    required this.likes,
+    required this.comments,
+    required this.timeAgo,
+  });
 }
 
 class ChatMessage {

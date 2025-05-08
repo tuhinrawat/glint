@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'features/home/home_page.dart';
 import 'features/itinerary/itinerary_page.dart';
 import 'features/itinerary/my_trips_page.dart';
@@ -12,6 +15,9 @@ import 'features/social/feed_page.dart';
 import 'features/experience/add_experience_page.dart';
 import 'core/theme/app_theme.dart';
 import 'dart:io' show Platform;
+import 'features/onboarding/onboarding_page.dart';
+import 'services/auth_service.dart';
+import 'core/widgets/brand_logo.dart';
 
 class MainNavigationPage extends StatefulWidget {
   const MainNavigationPage({super.key});
@@ -51,6 +57,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         ),
       ),
       floatingActionButton: _currentIndex == 0 ? FloatingActionButton(
+        heroTag: 'mainNavFAB',
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Add experience feature coming soon!')),
@@ -111,25 +118,84 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   }
 }
 
-void main() {
-  runApp(const MyApp());
+/// App root widget that checks auth state and provides services
+class AppRoot extends StatefulWidget {
+  const AppRoot({super.key});
+
+  @override
+  State<AppRoot> createState() => _AppRootState();
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class _AppRootState extends State<AppRoot> {
+  final AuthService _authService = AuthService();
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    await _authService.initialize();
+    setState(() {
+      _isInitialized = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Travel App',
-      theme: AppTheme.darkTheme,
-      home: const MainNavigationPage(),
-      routes: {
-        '/home': (context) => const MainNavigationPage(),
-        '/itinerary': (context) => const MainNavigationPage(),
-        '/profile': (context) => const MainNavigationPage(),
-        '/booking': (context) => const BookingPage(),
+    if (!_isInitialized) {
+      return const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    return Consumer<AuthService>(
+      builder: (context, authService, _) {
+        final initialRoute = authService.isLoggedIn
+            ? '/home'
+            : '/onboarding';
+
+        return MaterialApp(
+          title: 'Glint Travel',
+          theme: AppTheme.darkTheme,
+          initialRoute: initialRoute,
+          routes: {
+            '/onboarding': (context) => const OnboardingPage(),
+            '/home': (context) => const MainNavigationPage(),
+            '/itinerary': (context) => const MainNavigationPage(),
+            '/profile': (context) => const MainNavigationPage(),
+            '/booking': (context) => const BookingPage(),
+          },
+        );
       },
     );
   }
+}
+
+void main() async {
+  // Ensure widgets are initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('Firebase initialized successfully');
+  } catch (e) {
+    debugPrint('Error initializing Firebase: $e');
+  }
+  
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => AuthService(),
+      child: const AppRoot(),
+    ),
+  );
 }

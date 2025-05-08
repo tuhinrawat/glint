@@ -7,6 +7,8 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_styles.dart';
 import '../../core/widgets/app_components.dart';
 import '../../core/widgets/bottom_nav_spacer.dart';
+import '../../core/widgets/brand_logo.dart';
+import '../../core/widgets/branded_app_bar.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -117,31 +119,21 @@ class _FeedPageState extends State<FeedPage> with SingleTickerProviderStateMixin
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       extendBody: true,
+      appBar: BrandedAppBar(
+        title: 'Feed',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_box_outlined, size: AppTheme.iconSizeMedium),
+            onPressed: _createMoment,
+            tooltip: 'Share your travel moment',
+          ),
+        ],
+      ),
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverAppBar(
-              floating: true,
-              title: const Text(
-                'Glint Feed',
-                style: TextStyle(
-                  color: AppTheme.textPrimaryColor,
-                  fontSize: AppTheme.fontSizeXLarge,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.add_box_outlined, size: AppTheme.iconSizeMedium),
-                  onPressed: _createMoment,
-                  tooltip: 'Share your travel moment',
-                  padding: const EdgeInsets.all(AppTheme.spacingSmall),
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
             SliverToBoxAdapter(
               child: _buildCategorySelector(),
             ),

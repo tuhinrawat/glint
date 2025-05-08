@@ -37,8 +37,19 @@ dependencies:
   cupertino_icons: ^1.0.2
   http: ^1.2.1
   flutter_secure_storage: ^9.2.2
-  cloud_firestore: ^5.4.3
+  cloud_firestore: ^4.8.4
   fl_chart: ^0.68.0
+  intl: ^0.19.0
+  shared_preferences: ^2.2.2
+  image_picker: ^1.0.4
+  
+  # Firebase packages
+  firebase_core: ^2.15.0
+  firebase_auth: ^4.7.2
+  
+  # Social authentication
+  google_sign_in: ^6.1.4
+  flutter_facebook_auth: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -67,6 +78,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/placeholder.png
+    - assets/images/onboarding/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
