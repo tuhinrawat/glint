@@ -5,6 +5,7 @@ import '../itinerary/itinerary_details_page.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_styles.dart';
 import '../../core/widgets/app_components.dart';
+import '../../core/widgets/bottom_nav_spacer.dart';
 
 class ExplorePage extends StatefulWidget {
   final ItineraryService itineraryService;
@@ -101,10 +102,11 @@ class _ExplorePageState extends State<ExplorePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
+      extendBody: true,
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(
-          physics: const ClampingScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // App Bar with search
             SliverAppBar(
@@ -120,17 +122,14 @@ class _ExplorePageState extends State<ExplorePage> {
                 ),
               ),
               bottom: PreferredSize(
-                // Increase the height to prevent overflow
                 preferredSize: const Size.fromHeight(60),
                 child: Container(
-                  // Add extra bottom padding to prevent overflow
                   margin: const EdgeInsets.fromLTRB(
                     AppTheme.spacingLarge, 
                     0, 
                     AppTheme.spacingLarge, 
-                    AppTheme.spacingMedium // Increased from spacingSmall
+                    AppTheme.spacingMedium
                   ),
-                  // Set a fixed height for the search bar
                   height: 48,
                   child: AppComponents.searchBar(
                     controller: _searchController,
@@ -141,9 +140,9 @@ class _ExplorePageState extends State<ExplorePage> {
               ),
             ),
             
-            // Add a small spacer to fix any overflow
+            // Small spacer
             const SliverToBoxAdapter(
-              child: SizedBox(height: 4), // 4px spacer to fix the 2px overflow
+              child: SizedBox(height: 4),
             ),
             
             // Popular Destinations
@@ -195,25 +194,19 @@ class _ExplorePageState extends State<ExplorePage> {
                           final data = _recommendedItineraries[index];
                           final itinerary = Itinerary.fromJson(data['itinerary']);
                           
-                          final isLastItem = index == _recommendedItineraries.length - 1;
-                          
-                          return Column(
-                            children: [
-                              ItineraryCard(
-                                itinerary: itinerary,
-                                tips: data['personalized_tips'],
-                                savings: data['estimated_savings'],
-                              ),
-                              // Add extra padding after the last item
-                              if (isLastItem)
-                                const SizedBox(height: 100),
-                            ],
+                          return ItineraryCard(
+                            itinerary: itinerary,
+                            tips: data['personalized_tips'],
+                            savings: data['estimated_savings'],
                           );
                         },
                         childCount: _recommendedItineraries.length,
                       ),
                     ),
                   ),
+            
+            // Add the dynamic bottom spacer to account for the navigation bar
+            BottomNavSpacer.sliverDynamic(context),
           ],
         ),
       ),

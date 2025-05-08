@@ -39,6 +39,9 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the bottom padding (for notches, home indicators, etc.)
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    
     return Scaffold(
       body: Material(
         type: MaterialType.transparency,
@@ -57,7 +60,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
       ) : null,
       extendBody: true,
       bottomNavigationBar: Container(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom),
+        padding: EdgeInsets.only(bottom: bottomPadding),
         decoration: BoxDecoration(
           color: AppTheme.surfaceColor,
           boxShadow: [
@@ -69,10 +72,12 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           ],
         ),
         child: NavigationBar(
+          // Fixed height for the navbar itself (excluding system padding)
           height: 60,
           backgroundColor: AppTheme.surfaceColor,
           elevation: 0,
           selectedIndex: _currentIndex,
+          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
           onDestinationSelected: (index) {
             setState(() {
               _currentIndex = index;
@@ -80,23 +85,23 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           },
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
+              icon: Icon(Icons.home_outlined, size: AppTheme.iconSizeMedium),
+              selectedIcon: Icon(Icons.home, size: AppTheme.iconSizeMedium),
               label: 'Feed',
             ),
             NavigationDestination(
-              icon: Icon(Icons.explore_outlined),
-              selectedIcon: Icon(Icons.explore),
+              icon: Icon(Icons.explore_outlined, size: AppTheme.iconSizeMedium),
+              selectedIcon: Icon(Icons.explore, size: AppTheme.iconSizeMedium),
               label: 'Explore',
             ),
             NavigationDestination(
-              icon: Icon(Icons.map_outlined),
-              selectedIcon: Icon(Icons.map),
+              icon: Icon(Icons.map_outlined, size: AppTheme.iconSizeMedium),
+              selectedIcon: Icon(Icons.map, size: AppTheme.iconSizeMedium),
               label: 'My Trips',
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
+              icon: Icon(Icons.person_outline, size: AppTheme.iconSizeMedium),
+              selectedIcon: Icon(Icons.person, size: AppTheme.iconSizeMedium),
               label: 'Profile',
             ),
           ],
