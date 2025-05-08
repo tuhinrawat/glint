@@ -32,8 +32,8 @@ class _OnboardingPageState extends State<OnboardingPage> with SingleTickerProvid
 
   final List<OnboardingItem> _pages = [
     OnboardingItem(
-      title: "Intelligent Discovery",
-      subtitle: "Unleash your wanderlust with AI-powered recommendations tailored to your passions. From serene Kerala backwaters to vibrant Rajasthan festivals, find unique experiences that match your budget and style in seconds.",
+      title: "Discover Your Next Adventure",
+      subtitle: "Experience personalized travel recommendations powered by AI. Find hidden gems and unique destinations that match your interests and budget.",
       icon: Icons.explore,
       color: const Color(0xFF6C63FF),
     ),
@@ -218,6 +218,13 @@ class _OnboardingPageState extends State<OnboardingPage> with SingleTickerProvid
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Add Welcome to Glint for first page
+            if (_currentPage == 0) ...[
+              const SizedBox(height: 20),
+              const BrandLogo(fontSize: 42, withTagline: true),
+              const SizedBox(height: 40),
+            ],
+            
             // Icon with background
             Container(
               width: 100,
@@ -237,16 +244,27 @@ class _OnboardingPageState extends State<OnboardingPage> with SingleTickerProvid
             // Title - If this is the last page, use the brand logo
             page.isLogin
                 ? const BrandLogo(fontSize: 32)
-                : Text(
-                    page.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      height: 1.2,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                : _currentPage == 0
+                    ? const Text(
+                        "Discover Your Next Adventure",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          height: 1.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      )
+                    : Text(
+                        page.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          height: 1.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
             const SizedBox(height: 16),
             
             // Subtitle
