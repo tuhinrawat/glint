@@ -22,28 +22,51 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
   List<Map<String, dynamic>> _suggestedItineraries = [];
   String? _userQuery;
   bool _isLoading = false;
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
+  bool _isChatOpen = false;
+  AnimationController? _animationController;
+  Animation<Offset>? _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
+    _initializeAnimations();
     _addBotMessage("Hi! I'm your travel planning assistant. Where would you like to go?");
     _generateMockItineraries();
+  }
+
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController!,
+      curve: Curves.easeOut,
+    ));
+  }
+
+  void _toggleChat() {
+    if (_animationController == null) return;
+    
+    setState(() {
+      _isChatOpen = !_isChatOpen;
+      if (_isChatOpen) {
+        _animationController!.forward();
+      } else {
+        _animationController!.reverse();
+      }
+    });
   }
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
-    _animationController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 
@@ -153,10 +176,11 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
     final startDate = itinerary.startDate;
     final endDate = itinerary.startDate.add(Duration(days: itinerary.days.length));
     final groupSize = itinerary.groupSize;
-    final totalBudget = itinerary.totalCost;
-    final flightBudget = (totalBudget * 0.4).round();
-    final hotelBudget = (totalBudget * 0.4).round();
-    final cabBudget = (totalBudget * 0.2).round();
+    
+    // Calculate costs as integers
+    final flightCost = itinerary.suggestedFlightCost;
+    final hotelCost = itinerary.suggestedHotelCostPerNight;
+    final cabCost = itinerary.suggestedCabCostPerDay;
 
     if (type == 'flight') {
       String from = '';
@@ -182,7 +206,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Book Flight', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                    Text('Book Flight (Budget: ₹$flightCost)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                     const SizedBox(height: 16),
                     TextField(
                       decoration: const InputDecoration(labelText: 'From'),
@@ -235,7 +259,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(ctx);
-                          _showDummyFlightResults(context, from, to, depart, people, flightBudget);
+                          _showDummyFlightResults(context, from, to, depart, people, flightCost);
                         },
                         child: const Text('Show Flights'),
                       ),
@@ -271,7 +295,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Book Hotel', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                    Text('Book Hotel (Budget: ₹$hotelCost per night)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                     const SizedBox(height: 16),
                     TextField(
                       decoration: const InputDecoration(labelText: 'City'),
@@ -336,7 +360,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(ctx);
-                          _showDummyHotelResults(context, city, checkin, checkout, people, hotelBudget);
+                          _showDummyHotelResults(context, city, checkin, checkout, people, hotelCost);
                         },
                         child: const Text('Show Hotels'),
                       ),
@@ -372,7 +396,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Book Cab', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                    Text('Book Cab (Budget: ₹$cabCost per day)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                     const SizedBox(height: 16),
                     TextField(
                       decoration: const InputDecoration(labelText: 'From'),
@@ -425,7 +449,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(ctx);
-                          _showDummyCabResults(context, from, to, date, people, cabBudget);
+                          _showDummyCabResults(context, from, to, date, people, cabCost);
                         },
                         child: const Text('Show Cabs'),
                       ),
@@ -554,41 +578,145 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
   void _generateMockItineraries() async {
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(milliseconds: 600));
+    
+    final hotelNames = {
+      "Goa": ["Taj Resort & Spa", "Marriott Beach Resort", "Grand Hyatt"],
+      "Manali": ["The Himalayan", "Apple Country Resort", "Royal Palace"],
+      "Kerala": ["Kumarakom Lake Resort", "Taj Malabar", "Le Meridien"],
+      "Jaipur": ["Rambagh Palace", "Taj Jai Mahal", "ITC Rajputana"],
+      "Ladakh": ["The Grand Dragon", "Ladakh Sarai", "The Zen"],
+    };
+
+    final localAttractions = {
+      "Goa": ["Calangute Beach", "Basilica of Bom Jesus", "Fort Aguada", "Anjuna Flea Market"],
+      "Manali": ["Rohtang Pass", "Hadimba Temple", "Solang Valley", "Mall Road"],
+      "Kerala": ["Alleppey Backwaters", "Munnar Tea Gardens", "Varkala Beach", "Fort Kochi"],
+      "Jaipur": ["Amber Fort", "Hawa Mahal", "City Palace", "Jantar Mantar"],
+      "Ladakh": ["Pangong Lake", "Leh Palace", "Nubra Valley", "Shanti Stupa"],
+    };
+
     // Mock data for 3-5 itineraries
     _suggestedItineraries = List.generate(4, (i) {
       final destinations = ["Goa", "Manali", "Kerala", "Jaipur", "Ladakh"];
       final destination = destinations[i % destinations.length];
       final likes = 50 + i * 17;
+      final totalCost = 40000 + i * 8000;
+      
+      // Calculate costs as integers
+      final flightCost = ((totalCost * 0.4) as double).round();
+      final hotelCostPerNight = ((totalCost * 0.4 / 5) as double).round();
+      final cabCostPerDay = ((totalCost * 0.2 / 5) as double).round();
+      
+      final hotels = hotelNames[destination] ?? ["Local Hotel"];
+      final attractions = localAttractions[destination] ?? ["Local Attraction"];
+
       final reviews = [
         {"user": "Aditi S.", "review": "Amazing trip! Well planned.", "avatar": "https://randomuser.me/api/portraits/women/44.jpg"},
         {"user": "Rahul V.", "review": "Loved the activities!", "avatar": "https://randomuser.me/api/portraits/men/32.jpg"},
       ];
+
       final health = [
         "Stay hydrated, especially in summer.",
         "Carry sunscreen and a hat.",
         if (destination == "Ladakh") "Beware of altitude sickness. Acclimatize properly.",
       ];
+
       final sustainability = [
         "Support local businesses.",
         "Avoid single-use plastics.",
         "Respect local culture and wildlife.",
       ];
+
       final wellBeing = [
         "Take regular breaks.",
         "Eat healthy local food.",
         "Get enough sleep.",
       ];
+
+      final days = List.generate(5, (d) {
+        if (d == 0) {
+          // First day - arrival and check-in
+          return {
+            "day": d + 1,
+            "flight": {
+              "from": "Mumbai",
+              "to": destination,
+              "time": "09:00 AM",
+              "airline": "IndiGo",
+              "cost": flightCost,
+            },
+            "hotel": {
+              "name": hotels[0],
+              "checkIn": "02:00 PM",
+              "cost": hotelCostPerNight,
+            },
+            "cab": {
+              "from": "$destination Airport",
+              "to": hotels[0],
+              "type": "SUV",
+              "cost": (cabCostPerDay * 0.3).round(),
+            },
+            "activities": [
+              "Airport Transfer",
+              "Hotel Check-in",
+              "Evening: ${attractions[0]} visit",
+            ],
+          };
+        } else if (d == 4) {
+          // Last day - checkout and departure
+          return {
+            "day": d + 1,
+            "hotel": {
+              "name": hotels[0],
+              "checkOut": "11:00 AM",
+              "cost": hotelCostPerNight,
+            },
+            "cab": {
+              "from": hotels[0],
+              "to": "$destination Airport",
+              "type": "SUV",
+              "cost": (cabCostPerDay * 0.3).round(),
+            },
+            "flight": {
+              "from": destination,
+              "to": "Mumbai",
+              "time": "06:00 PM",
+              "airline": "IndiGo",
+              "cost": flightCost,
+            },
+            "activities": [
+              "Morning: ${attractions[3]} visit",
+              "Hotel Check-out",
+              "Airport Transfer",
+            ],
+          };
+        } else {
+          // Middle days - local activities
+          return {
+            "day": d + 1,
+            "hotel": {
+              "name": hotels[0],
+              "cost": hotelCostPerNight,
+            },
+            "cab": {
+              "type": "SUV",
+              "duration": "Full Day",
+              "cost": cabCostPerDay,
+            },
+            "activities": [
+              "Morning: ${attractions[d]} exploration",
+              "Afternoon: Local cuisine experience",
+              "Evening: Cultural show/Local entertainment",
+            ],
+          };
+        }
+      });
+
       return {
         "itinerary": Itinerary(
           destination: destination,
-          days: List.generate(5, (d) => {
-            "day": d + 1,
-            "activities": [
-              "Activity ${d + 1}A in $destination",
-              "Activity ${d + 1}B in $destination",
-            ],
-          }),
-          totalCost: 40000 + i * 8000,
+          days: days,
+          totalCost: totalCost,
           travelType: "Leisure",
           groupSize: 2 + i,
           startDate: DateTime.now().add(Duration(days: i * 3)),
@@ -675,10 +803,10 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                       Row(
                         children: [
                           Icon(Icons.currency_rupee, color: Colors.greenAccent.shade400),
-                          Text('Total: ₹${itinerary.totalCost.round()}  ', style: const TextStyle(fontSize: 16, color: Colors.white)),
+                          Text('Total: ₹${itinerary.totalCost}  ', style: const TextStyle(fontSize: 16, color: Colors.white)),
                           const SizedBox(width: 12),
                           Icon(Icons.person, color: Colors.white54),
-                          Text('Per Person: ₹$perPerson', style: const TextStyle(fontSize: 16, color: Colors.white)),
+                          Text('Per Person: ₹${(itinerary.totalCost / itinerary.groupSize).round()}', style: const TextStyle(fontSize: 16, color: Colors.white)),
                         ],
                       ),
                       const SizedBox(height: 14),
@@ -698,7 +826,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                       Text('Plan Overview', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey, fontSize: 16)),
                       const SizedBox(height: 12),
                       SizedBox(
-                        height: 200,
+                        height: 280,
                         child: PageView.builder(
                           controller: _pageController,
                           itemCount: days.length,
@@ -715,25 +843,95 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                                   color: const Color(0xFF181A20),
                                   elevation: idx == _currentDay ? 10 : 2,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Icon(Icons.today, size: 22, color: Colors.white),
-                                            const SizedBox(width: 10),
-                                            Text('Day ${d['day']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.white)),
+                                  child: SingleChildScrollView(
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(Icons.today, size: 22, color: Colors.white),
+                                              const SizedBox(width: 10),
+                                              Text('Day ${d['day']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.white)),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 12),
+                                          if (d['flight'] != null) ...[
+                                            Row(
+                                              children: [
+                                                Icon(Icons.flight, size: 18, color: Colors.blueAccent.shade100),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    '${d['flight']['airline']} - ${d['flight']['from']} to ${d['flight']['to']} (${d['flight']['time']})\n₹${d['flight']['cost']}',
+                                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
                                           ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          (d['activities'] as List).join(', '),
-                                          style: const TextStyle(fontSize: 16, color: Colors.white70),
-                                        ),
-                                      ],
+                                          if (d['hotel'] != null) ...[
+                                            Row(
+                                              children: [
+                                                Icon(Icons.hotel, size: 18, color: Colors.purpleAccent.shade100),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    '${d['hotel']['name']} ${d['hotel']['checkIn'] != null ? '(Check-in: ${d['hotel']['checkIn']})' : d['hotel']['checkOut'] != null ? '(Check-out: ${d['hotel']['checkOut']})' : ''}\n₹${d['hotel']['cost']} per night',
+                                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                          ],
+                                          if (d['cab'] != null) ...[
+                                            Row(
+                                              children: [
+                                                Icon(Icons.local_taxi, size: 18, color: Colors.amberAccent.shade100),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    d['cab']['duration'] != null
+                                                        ? '${d['cab']['type']} - ${d['cab']['duration']}\n₹${d['cab']['cost']}'
+                                                        : '${d['cab']['type']} - ${d['cab']['from']} to ${d['cab']['to']}\n₹${d['cab']['cost']}',
+                                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                          ],
+                                          const Divider(color: Colors.white24),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Activities:',
+                                            style: TextStyle(fontSize: 14, color: Colors.tealAccent.shade100, fontWeight: FontWeight.w500),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          ...List.generate(
+                                            (d['activities'] as List).length,
+                                            (i) => Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 2),
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.circle, size: 6, color: Colors.tealAccent.shade100),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      d['activities'][i],
+                                                      style: const TextStyle(fontSize: 13, color: Colors.white70),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -875,6 +1073,11 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    // Ensure animations are initialized
+    if (_animationController == null) {
+      _initializeAnimations();
+    }
+
     final List<String> suggestions = [
       "Plan a trip to Goa for 4 people in December",
       "Suggest a 5-day adventure in Manali for 2 friends",
@@ -882,157 +1085,237 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
       "I want a cultural trip to Jaipur for 6 people",
       "Plan a budget trip to Ladakh for 7 days",
     ];
+
     return Material(
       type: MaterialType.transparency,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade300,
-              Colors.purple.shade300,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      "AI-Suggested Itineraries",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, size: 28),
-                    color: Theme.of(context).colorScheme.primary,
-                    tooltip: "Refresh suggestions",
-                    onPressed: _generateMockItineraries,
-                  ),
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.blue.shade300,
+                  Colors.purple.shade300,
                 ],
               ),
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        itemCount: _suggestedItineraries.length,
-                        itemBuilder: (context, idx) {
-                          final data = _suggestedItineraries[idx];
-                          final itinerary = data["itinerary"] as Itinerary;
-                          final likes = data["likes"] as int;
-                          final reviews = data["reviews"] as List;
-                          final health = data["health"] as List;
-                          final sustainability = data["sustainability"] as List;
-                          final wellBeing = data["wellBeing"] as List;
-                          return _buildItineraryCardWithExtras(
-                            itinerary,
-                            likes: likes,
-                            reviews: reviews,
-                            health: health,
-                            sustainability: sustainability,
-                            wellBeing: wellBeing,
-                          );
-                        },
-                      ),
-              ),
-              if (_isLoading)
-                const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircularProgressIndicator(),
-                ),
-              if (_suggestedItineraries.isEmpty) ...[
-                // Suggestions section
-                Container(
-                  width: double.infinity,
-                  color: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Suggestions",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: suggestions.map((prompt) => ActionChip(
-                          label: Text(prompt, style: const TextStyle(color: Colors.white)),
-                          backgroundColor: Colors.white.withOpacity(0.10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.25)),
-                          onPressed: () {
-                            _messageController.text = prompt;
-                            _processUserMessage(prompt);
-                          },
-                        )).toList(),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Tip: You can ask for a trip by destination, group size, days, season, or travel style!",
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(8.0),
-                  color: Colors.white,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          decoration: InputDecoration(
-                            hintText: 'Type your message...',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(24.0),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
-                            ),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          "AI-Suggested Itineraries",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontSize: 20,
                           ),
-                          onSubmitted: (message) {
-                            if (message.isNotEmpty) {
-                              _processUserMessage(message);
-                              _messageController.clear();
-                            }
-                          },
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.send),
-                        onPressed: () {
-                          final message = _messageController.text;
-                          if (message.isNotEmpty) {
-                            _processUserMessage(message);
-                            _messageController.clear();
-                          }
-                        },
+                        icon: const Icon(Icons.refresh, size: 28),
+                        color: Theme.of(context).colorScheme.primary,
+                        tooltip: "Refresh suggestions",
+                        onPressed: _generateMockItineraries,
                       ),
                     ],
                   ),
-                ),
-              ],
-            ],
+                  Expanded(
+                    child: _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            itemCount: _suggestedItineraries.length,
+                            itemBuilder: (context, idx) {
+                              final data = _suggestedItineraries[idx];
+                              final itinerary = data["itinerary"] as Itinerary;
+                              final likes = data["likes"] as int;
+                              final reviews = data["reviews"] as List;
+                              final health = data["health"] as List;
+                              final sustainability = data["sustainability"] as List;
+                              final wellBeing = data["wellBeing"] as List;
+                              return _buildItineraryCardWithExtras(
+                                itinerary,
+                                likes: likes,
+                                reviews: reviews,
+                                health: health,
+                                sustainability: sustainability,
+                                wellBeing: wellBeing,
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+          // Floating Chat Button
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              onPressed: _toggleChat,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: Icon(
+                _isChatOpen ? Icons.close : Icons.chat_bubble_outline,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          // Sliding Chat Panel
+          if (_isChatOpen && _slideAnimation != null)
+            Positioned.fill(
+              child: SlideTransition(
+                position: _slideAnimation!,
+                child: Container(
+                  color: Colors.black54,
+                  child: GestureDetector(
+                    onTap: () => _toggleChat(),
+                    child: Container(
+                      color: Colors.transparent,
+                      child: Column(
+                        children: [
+                          const Spacer(),
+                          Container(
+                            height: MediaQuery.of(context).size.height * 0.7,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                            ),
+                            child: Column(
+                              children: [
+                                // Handle bar
+                                Center(
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 12),
+                                    width: 40,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    width: double.infinity,
+                                    color: Colors.transparent,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Suggestions",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 4,
+                                          children: suggestions.map((prompt) => ActionChip(
+                                            label: Text(prompt, style: const TextStyle(color: Colors.white)),
+                                            backgroundColor: Colors.white.withOpacity(0.10),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                            side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.25)),
+                                            onPressed: () {
+                                              _messageController.text = prompt;
+                                              _processUserMessage(prompt);
+                                            },
+                                          )).toList(),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          "Tip: You can ask for a trip by destination, group size, days, season, or travel style!",
+                                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(12.0),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).cardColor,
+                                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextField(
+                                          controller: _messageController,
+                                          style: const TextStyle(color: Colors.white),
+                                          decoration: InputDecoration(
+                                            hintText: 'Type your message...',
+                                            hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(24.0),
+                                              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(24.0),
+                                              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(24.0),
+                                              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                                            ),
+                                            contentPadding: const EdgeInsets.symmetric(
+                                              horizontal: 16.0,
+                                              vertical: 8.0,
+                                            ),
+                                            filled: true,
+                                            fillColor: Colors.white.withOpacity(0.1),
+                                          ),
+                                          onSubmitted: (message) {
+                                            if (message.isNotEmpty) {
+                                              _processUserMessage(message);
+                                              _messageController.clear();
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
+                                        child: IconButton(
+                                          icon: const Icon(Icons.send),
+                                          color: Colors.white,
+                                          onPressed: () {
+                                            final message = _messageController.text;
+                                            if (message.isNotEmpty) {
+                                              _processUserMessage(message);
+                                              _messageController.clear();
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -1,7 +1,7 @@
 class Itinerary {
   final String destination;
   final List<Map<String, dynamic>> days;
-  final double totalCost;
+  final int totalCost;
   final String travelType;
   final int groupSize;
   final DateTime startDate;
@@ -36,7 +36,7 @@ class Itinerary {
   factory Itinerary.fromJson(Map<String, dynamic> json) => Itinerary(
         destination: json['destination'] as String,
         days: List<Map<String, dynamic>>.from(json['days'] as List),
-        totalCost: json['totalCost'] as double,
+        totalCost: json['totalCost'] as int,
         travelType: json['travelType'] as String,
         groupSize: json['groupSize'] as int,
         startDate: DateTime.parse(json['startDate'] as String),
@@ -48,7 +48,7 @@ class Itinerary {
   Itinerary copyWith({
     String? destination,
     List<Map<String, dynamic>>? days,
-    double? totalCost,
+    int? totalCost,
     String? travelType,
     int? groupSize,
     DateTime? startDate,
@@ -67,5 +67,20 @@ class Itinerary {
       hotelDetails: hotelDetails ?? this.hotelDetails,
       cabDetails: cabDetails ?? this.cabDetails,
     );
+  }
+
+  // Helper method to get suggested flight cost
+  int get suggestedFlightCost {
+    return (totalCost * 0.4).round();
+  }
+
+  // Helper method to get suggested hotel cost per night
+  int get suggestedHotelCostPerNight {
+    return (totalCost * 0.4 / days.length).round();
+  }
+
+  // Helper method to get suggested cab cost per day
+  int get suggestedCabCostPerDay {
+    return (totalCost * 0.2 / days.length).round();
   }
 } 

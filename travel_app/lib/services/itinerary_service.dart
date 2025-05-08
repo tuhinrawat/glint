@@ -16,32 +16,26 @@ class ItineraryService {
     required int groupSize,
     required DateTime startDate,
   }) async {
-    // Simulate API call delay
-    await Future.delayed(const Duration(seconds: 2));
+    // Simulate API delay
+    await Future.delayed(const Duration(milliseconds: 800));
 
-    // Calculate per person budget
-    final perPersonBudget = budget / groupSize;
+    // Mock itinerary generation
+    final days = List.generate(5, (d) => {
+      "day": d + 1,
+      "activities": [
+        "Activity ${d + 1}A in $destination",
+        "Activity ${d + 1}B in $destination",
+      ],
+    });
 
-    // Generate activities based on budget and travel type
-    final activities = _generateActivities(destination, perPersonBudget, travelType);
-
-    // Create itinerary
-    final itinerary = Itinerary(
+    return Itinerary(
       destination: destination,
-      days: activities,
-      totalCost: budget,
+      days: days,
+      totalCost: budget.round(),
       travelType: travelType,
       groupSize: groupSize,
       startDate: startDate,
     );
-
-    // Save itinerary to secure storage
-    await _storage.write(
-      key: 'latest_itinerary',
-      value: jsonEncode(itinerary.toJson()),
-    );
-
-    return itinerary;
   }
 
   Future<Itinerary?> getLatestItinerary() async {
@@ -117,10 +111,10 @@ class ItineraryService {
 
   Future<Itinerary> adjustBudget(Itinerary itinerary, double newBudget) async {
     // Recalculate activities based on new budget
-    final perPersonBudget = newBudget / itinerary.groupSize;
+    final perPersonBudget = (newBudget / itinerary.groupSize).round();
     final newActivities = _generateActivities(
       itinerary.destination,
-      perPersonBudget,
+      perPersonBudget.toDouble(),
       itinerary.travelType,
     );
 
@@ -128,7 +122,7 @@ class ItineraryService {
     final adjustedItinerary = Itinerary(
       destination: itinerary.destination,
       days: newActivities,
-      totalCost: newBudget,
+      totalCost: newBudget.round(),
       travelType: itinerary.travelType,
       groupSize: itinerary.groupSize,
       startDate: itinerary.startDate,
@@ -141,5 +135,27 @@ class ItineraryService {
     );
 
     return adjustedItinerary;
+  }
+
+  Future<Itinerary> adjustItinerary({
+    required Itinerary currentItinerary,
+    String? newDestination,
+    double? newBudget,
+    String? newTravelType,
+    int? newGroupSize,
+    DateTime? newStartDate,
+  }) async {
+    // Simulate API delay
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    // Create adjusted itinerary
+    return Itinerary(
+      destination: newDestination ?? currentItinerary.destination,
+      days: currentItinerary.days,
+      totalCost: (newBudget ?? currentItinerary.totalCost).round(),
+      travelType: newTravelType ?? currentItinerary.travelType,
+      groupSize: newGroupSize ?? currentItinerary.groupSize,
+      startDate: newStartDate ?? currentItinerary.startDate,
+    );
   }
 } 
