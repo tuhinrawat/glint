@@ -14,10 +14,12 @@ import 'services/itinerary_service.dart';
 import 'features/social/feed_page.dart';
 import 'features/experience/add_experience_page.dart';
 import 'core/theme/app_theme.dart';
+import 'core/providers/theme_provider.dart';
 import 'dart:io' show Platform;
 import 'features/onboarding/onboarding_page.dart';
 import 'services/auth_service.dart';
 import 'core/widgets/brand_logo.dart';
+import 'core/services/currency_service.dart';
 
 class MainNavigationPage extends StatefulWidget {
   const MainNavigationPage({super.key});
@@ -30,13 +32,14 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   int _currentIndex = 0;
   late final ItineraryService _itineraryService;
   late final List<Widget> _pages;
+  final _feedPageKey = GlobalKey<FeedPageState>();
 
   @override
   void initState() {
     super.initState();
     _itineraryService = ItineraryService();
     _pages = [
-      const FeedPage(),
+      FeedPage(key: _feedPageKey),
       ExplorePage(itineraryService: _itineraryService),
       MyTripsPage(service: _itineraryService),
       const ProfilePage(),
@@ -59,29 +62,27 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
       floatingActionButton: _currentIndex == 0 ? FloatingActionButton(
         heroTag: 'mainNavFAB',
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Add experience feature coming soon!')),
-          );
+          _feedPageKey.currentState?.showAddExperienceSheet();
         },
-        child: const Icon(Icons.add_photo_alternate),
+        backgroundColor: AppTheme.primaryColor,
+        child: const Icon(Icons.add_photo_alternate, color: Colors.white),
       ) : null,
       extendBody: true,
       bottomNavigationBar: Container(
         padding: EdgeInsets.only(bottom: bottomPadding),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: Theme.of(context).colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
               blurRadius: 4,
               offset: const Offset(0, -1),
             ),
           ],
         ),
         child: NavigationBar(
-          // Fixed height for the navbar itself (excluding system padding)
           height: 60,
-          backgroundColor: AppTheme.surfaceColor,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           elevation: 0,
           selectedIndex: _currentIndex,
           labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
@@ -90,25 +91,25 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
               _currentIndex = index;
             });
           },
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.home_outlined, size: AppTheme.iconSizeMedium),
-              selectedIcon: Icon(Icons.home, size: AppTheme.iconSizeMedium),
+              icon: Icon(Icons.home_outlined, size: 24),
+              selectedIcon: Icon(Icons.home, size: 24),
               label: 'Feed',
             ),
             NavigationDestination(
-              icon: Icon(Icons.explore_outlined, size: AppTheme.iconSizeMedium),
-              selectedIcon: Icon(Icons.explore, size: AppTheme.iconSizeMedium),
+              icon: Icon(Icons.explore_outlined, size: 24),
+              selectedIcon: Icon(Icons.explore, size: 24),
               label: 'Explore',
             ),
             NavigationDestination(
-              icon: Icon(Icons.map_outlined, size: AppTheme.iconSizeMedium),
-              selectedIcon: Icon(Icons.map, size: AppTheme.iconSizeMedium),
+              icon: Icon(Icons.map_outlined, size: 24),
+              selectedIcon: Icon(Icons.map, size: 24),
               label: 'My Trips',
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline, size: AppTheme.iconSizeMedium),
-              selectedIcon: Icon(Icons.person, size: AppTheme.iconSizeMedium),
+              icon: Icon(Icons.person_outline, size: 24),
+              selectedIcon: Icon(Icons.person, size: 24),
               label: 'Profile',
             ),
           ],
@@ -138,6 +139,7 @@ class _AppRootState extends State<AppRoot> {
 
   Future<void> _initializeApp() async {
     await _authService.initialize();
+    await CurrencyService.initialize();
     setState(() {
       _isInitialized = true;
     });
@@ -155,16 +157,20 @@ class _AppRootState extends State<AppRoot> {
       );
     }
 
-    return Consumer<AuthService>(
-      builder: (context, authService, _) {
-        final initialRoute = authService.isLoggedIn
-            ? '/home'
-            : '/onboarding';
-
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
         return MaterialApp(
           title: 'Glint Travel',
-          theme: AppTheme.darkTheme,
-          initialRoute: initialRoute,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeProvider.themeMode,
+          home: Consumer<AuthService>(
+            builder: (context, authService, _) {
+              return authService.isLoggedIn
+                ? const MainNavigationPage()
+                : const OnboardingPage();
+            },
+          ),
           routes: {
             '/onboarding': (context) => const OnboardingPage(),
             '/home': (context) => const MainNavigationPage(),
@@ -192,9 +198,15 @@ void main() async {
     debugPrint('Error initializing Firebase: $e');
   }
   
+  // Initialize services
+  await CurrencyService.initialize();
+  
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => AuthService(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
       child: const AppRoot(),
     ),
   );

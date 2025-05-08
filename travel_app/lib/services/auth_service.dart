@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_auth/firebase_auth.dart';  // Temporarily disabled
 import 'firebase_service.dart';
 
 /// Service to manage authentication state and user login/logout
@@ -44,39 +44,15 @@ class AuthService with ChangeNotifier {
         },
       );
       
-      // Check if user is already logged in with Firebase
-      final currentUser = _firebaseService.getCurrentUser();
-      
-      if (currentUser != null) {
-        // User is logged in with Firebase
-        _isLoggedIn = true;
-        _userId = currentUser.uid;
-        _userName = currentUser.displayName;
-        _userEmail = currentUser.email;
-        _userAvatar = currentUser.photoURL;
-        
-        notifyListeners();
-        return;
-      }
+      // Firebase Auth is temporarily disabled
+      await _initializeDemoMode();
+      return;
     } catch (e) {
       debugPrint('Error initializing Firebase: $e');
       // Continue with fallback authentication
       await _initializeDemoMode();
       return;
     }
-    
-    // If not logged in with Firebase, check SharedPreferences as fallback
-    final prefs = await SharedPreferences.getInstance();
-    _isLoggedIn = prefs.getBool(_isLoggedInKey) ?? false;
-    
-    if (_isLoggedIn) {
-      _userId = prefs.getString(_userIdKey);
-      _userName = prefs.getString(_userNameKey);
-      _userEmail = prefs.getString(_userEmailKey);
-      _userAvatar = prefs.getString(_userAvatarKey);
-    }
-    
-    notifyListeners();
   }
   
   // Helper method for initializing demo mode
@@ -87,81 +63,30 @@ class AuthService with ChangeNotifier {
   
   /// Login with Google
   Future<bool> loginWithGoogle() async {
-    try {
-      final userCredential = await _firebaseService.signInWithGoogle().timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {
-          debugPrint('Google login timed out, using demo mode');
-          throw Exception('Google login timed out');
-        },
-      );
-      
-      if (userCredential != null && userCredential.user != null) {
-        final user = userCredential.user!;
-        return _updateUserData(
-          userId: user.uid,
-          userName: user.displayName,
-          userEmail: user.email,
-          userAvatar: user.photoURL,
-          provider: 'google',
-        );
-      }
-      // If Firebase login fails, use demo mode
-      return demoLogin();
-    } catch (e) {
-      debugPrint('Google login error: $e');
-      // Fall back to demo login on any error
-      return demoLogin();
-    }
+    // Firebase Auth is temporarily disabled
+    debugPrint('Google login is temporarily disabled, using demo mode');
+    return demoLogin();
   }
   
   /// Login with Facebook
+  Future<bool> loginWithFacebook() async {
+    // Firebase Auth is temporarily disabled
+    debugPrint('Facebook login is temporarily disabled, using demo mode');
+    return demoLogin();
+  }
   
   /// Login with email and password
   Future<bool> loginWithEmailPassword(String email, String password) async {
-    try {
-      final userCredential = await _firebaseService.signInWithEmailPassword(email, password);
-      
-      if (userCredential != null && userCredential.user != null) {
-        final user = userCredential.user!;
-        return _updateUserData(
-          userId: user.uid,
-          userName: user.displayName ?? email.split('@')[0],
-          userEmail: user.email,
-          userAvatar: user.photoURL,
-          provider: 'email',
-        );
-      }
-      return false;
-    } catch (e) {
-      debugPrint('Email/password login error: $e');
-      return false;
-    }
+    // Firebase Auth is temporarily disabled
+    debugPrint('Email/password login is temporarily disabled, using demo mode');
+    return demoLogin();
   }
   
   /// Create account with email and password
   Future<bool> createAccountWithEmailPassword(String email, String password, String name) async {
-    try {
-      final userCredential = await _firebaseService.createUserWithEmailPassword(email, password);
-      
-      if (userCredential != null && userCredential.user != null) {
-        // Update user profile
-        await userCredential.user!.updateDisplayName(name);
-        
-        final user = userCredential.user!;
-        return _updateUserData(
-          userId: user.uid,
-          userName: name,
-          userEmail: user.email,
-          userAvatar: null,
-          provider: 'email',
-        );
-      }
-      return false;
-    } catch (e) {
-      debugPrint('Account creation error: $e');
-      return false;
-    }
+    // Firebase Auth is temporarily disabled
+    debugPrint('Account creation is temporarily disabled, using demo mode');
+    return demoLogin();
   }
   
   /// Legacy login method (for compatibility with existing code)

@@ -157,6 +157,7 @@ class ItineraryService {
     final dayPlans = List.generate(5, (d) {
       final date = startDate.add(Duration(days: d));
       return DayPlan(
+        day: d + 1,
         date: date,
         activities: [
           Activity(
@@ -178,7 +179,6 @@ class ItineraryService {
             tags: ["afternoon", "leisure"],
           ),
         ],
-        localTransports: [],
         totalCost: (budget * 0.2).roundToDouble(),
       );
     });
@@ -188,12 +188,17 @@ class ItineraryService {
       destination: destination,
       startDate: startDate,
       endDate: startDate.add(const Duration(days: 5)),
-      creatorId: 'system',
-      creatorName: 'Travel Assistant',
-      images: ['https://images.unsplash.com/photo-1506744038136-46273834b3fb'],
       dayPlans: dayPlans,
       totalCost: budget,
       numberOfPeople: groupSize,
+      travelType: travelType,
+      images: ['https://images.unsplash.com/photo-1506744038136-46273834b3fb'],
+      suggestedFlightCost: budget * 0.4,
+      suggestedHotelCostPerNight: (budget * 0.4) / 5,
+      suggestedCabCostPerDay: (budget * 0.2) / 5,
+      creatorName: 'Travel Assistant',
+      creatorAvatar: null,
+      tags: ['generated'],
     );
   }
 
@@ -275,6 +280,7 @@ class ItineraryService {
     final dayPlans = List.generate(5, (d) {
       final date = itinerary.startDate.add(Duration(days: d));
       return DayPlan(
+        day: d + 1,
         date: date,
         activities: [
           Activity(
@@ -296,7 +302,6 @@ class ItineraryService {
             tags: ["afternoon", "leisure"],
           ),
         ],
-        localTransports: [],
         totalCost: (perPersonBudget * 0.2).roundToDouble(),
       );
     });
@@ -307,12 +312,17 @@ class ItineraryService {
       destination: itinerary.destination,
       startDate: itinerary.startDate,
       endDate: itinerary.startDate.add(const Duration(days: 5)),
-      creatorId: itinerary.creatorId,
-      creatorName: itinerary.creatorName,
-      images: itinerary.images,
       dayPlans: dayPlans,
       totalCost: newBudget,
       numberOfPeople: itinerary.numberOfPeople,
+      travelType: itinerary.travelType,
+      images: itinerary.images,
+      suggestedFlightCost: newBudget * 0.4,
+      suggestedHotelCostPerNight: (newBudget * 0.4) / 5,
+      suggestedCabCostPerDay: (newBudget * 0.2) / 5,
+      creatorName: itinerary.creatorName,
+      creatorAvatar: itinerary.creatorAvatar,
+      tags: itinerary.tags,
     );
 
     // Save adjusted itinerary
@@ -341,12 +351,17 @@ class ItineraryService {
       destination: newDestination ?? currentItinerary.destination,
       startDate: newStartDate ?? currentItinerary.startDate,
       endDate: (newStartDate ?? currentItinerary.startDate).add(const Duration(days: 5)),
-      creatorId: currentItinerary.creatorId,
-      creatorName: currentItinerary.creatorName,
-      images: currentItinerary.images,
       dayPlans: currentItinerary.dayPlans,
       totalCost: newBudget ?? currentItinerary.totalCost,
       numberOfPeople: newGroupSize ?? currentItinerary.numberOfPeople,
+      travelType: newTravelType ?? currentItinerary.travelType,
+      images: currentItinerary.images,
+      suggestedFlightCost: (newBudget ?? currentItinerary.totalCost) * 0.4,
+      suggestedHotelCostPerNight: ((newBudget ?? currentItinerary.totalCost) * 0.4) / 5,
+      suggestedCabCostPerDay: ((newBudget ?? currentItinerary.totalCost) * 0.2) / 5,
+      creatorName: currentItinerary.creatorName,
+      creatorAvatar: currentItinerary.creatorAvatar,
+      tags: currentItinerary.tags,
     );
   }
 } 

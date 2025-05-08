@@ -114,11 +114,18 @@ class _AddExperiencePageState extends State<AddExperiencePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1B2E),
+      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text('Share Experience'),
+        title: Text(
+          'Share Experience',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: theme.colorScheme.onBackground,
+          ),
+        ),
         actions: [
           if (_isLoading)
             const Center(
@@ -130,7 +137,12 @@ class _AddExperiencePageState extends State<AddExperiencePage> {
           else
             TextButton(
               onPressed: _saveExperience,
-              child: const Text('Share'),
+              child: Text(
+                'Share',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
+              ),
             ),
         ],
       ),
@@ -142,17 +154,25 @@ class _AddExperiencePageState extends State<AddExperiencePage> {
             // Title
             TextField(
               controller: _titleController,
-              style: const TextStyle(color: Colors.white),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onBackground,
+              ),
               decoration: InputDecoration(
                 labelText: 'Title',
-                labelStyle: TextStyle(color: Colors.grey[400]),
+                labelStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onBackground.withOpacity(0.7),
+                ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey[700]!),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
               ),
             ),
@@ -161,18 +181,26 @@ class _AddExperiencePageState extends State<AddExperiencePage> {
             // Description
             TextField(
               controller: _descriptionController,
-              style: const TextStyle(color: Colors.white),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onBackground,
+              ),
               maxLines: 5,
               decoration: InputDecoration(
                 labelText: 'Description',
-                labelStyle: TextStyle(color: Colors.grey[400]),
+                labelStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onBackground.withOpacity(0.7),
+                ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey[700]!),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
               ),
             ),
@@ -181,17 +209,25 @@ class _AddExperiencePageState extends State<AddExperiencePage> {
             // Location
             TextField(
               controller: _locationController,
-              style: const TextStyle(color: Colors.white),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onBackground,
+              ),
               decoration: InputDecoration(
                 labelText: 'Location',
-                labelStyle: TextStyle(color: Colors.grey[400]),
+                labelStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onBackground.withOpacity(0.7),
+                ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Colors.grey[700]!),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
               ),
             ),
@@ -201,133 +237,185 @@ class _AddExperiencePageState extends State<AddExperiencePage> {
             Row(
               children: [
                 Expanded(
-                  child: ListTile(
-                    title: Text(
-                      'Start Date',
-                      style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                    ),
-                    subtitle: Text(
-                      _startDate != null
-                          ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
-                          : 'Select date',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    onTap: () => _pickDate(true),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Start Date',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onBackground.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () => _pickDate(true),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: theme.colorScheme.outline,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            _startDate != null
+                                ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
+                                : 'Select Date',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onBackground,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(width: 16),
                 Expanded(
-                  child: ListTile(
-                    title: Text(
-                      'End Date',
-                      style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                    ),
-                    subtitle: Text(
-                      _endDate != null
-                          ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
-                          : 'Optional',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    onTap: () => _pickDate(false),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'End Date',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onBackground.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () => _pickDate(false),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: theme.colorScheme.outline,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            _endDate != null
+                                ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
+                                : 'Select Date',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onBackground,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
-            // Images
+            // Image Selection
             Text(
               'Photos',
-              style: TextStyle(color: Colors.grey[400], fontSize: 14),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onBackground,
+              ),
             ),
             const SizedBox(height: 8),
-            SizedBox(
+            Container(
               height: 120,
-              child: ListView(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: theme.colorScheme.outline,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                children: [
-                  // Add Image Button
-                  Container(
-                    width: 120,
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey[700]!),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.add_photo_alternate, color: Colors.white),
-                      onPressed: _pickImages,
-                    ),
-                  ),
-                  // Selected Images
-                  ..._selectedImages.map((image) => Container(
-                    width: 120,
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey[700]!),
-                    ),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
+                itemCount: _selectedImages.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        onTap: _pickImages,
+                        child: Container(
+                          width: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: theme.colorScheme.outline,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.add_photo_alternate,
+                            color: theme.colorScheme.onBackground,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return Stack(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
                           child: Image.file(
-                            image,
+                            _selectedImages[index - 1],
+                            width: 100,
+                            height: 100,
                             fit: BoxFit.cover,
                           ),
                         ),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: IconButton(
-                            icon: const Icon(Icons.remove_circle, color: Colors.white),
-                            onPressed: () {
-                              setState(() {
-                                _selectedImages.remove(image);
-                              });
-                            },
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.remove_circle,
+                            color: theme.colorScheme.error,
                           ),
+                          onPressed: () {
+                            setState(() {
+                              _selectedImages.removeAt(index - 1);
+                            });
+                          },
                         ),
-                      ],
-                    ),
-                  )),
-                ],
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
             // Tags
             Text(
               'Tags',
-              style: TextStyle(color: Colors.grey[400], fontSize: 14),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onBackground,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              runSpacing: 8,
               children: [
-                // Add Tag Button
-                InputChip(
-                  label: const Text('Add Tag'),
-                  onPressed: () async {
-                    final tag = await showDialog<String>(
-                      context: context,
-                      builder: (context) => _AddTagDialog(),
-                    );
-                    if (tag != null) {
-                      _addTag(tag);
-                    }
-                  },
-                ),
-                // Selected Tags
                 ..._selectedTags.map((tag) => Chip(
                   label: Text(tag),
                   onDeleted: () => _removeTag(tag),
-                  backgroundColor: Colors.white.withOpacity(0.1),
-                  labelStyle: const TextStyle(color: Colors.white),
-                  deleteIconColor: Colors.white,
+                  backgroundColor: theme.colorScheme.secondaryContainer,
+                  labelStyle: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                  deleteIconColor: theme.colorScheme.onSecondaryContainer,
                 )),
+                ActionChip(
+                  label: const Text('Add Tag'),
+                  onPressed: () {
+                    // Show tag input dialog
+                  },
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  labelStyle: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
               ],
             ),
           ],

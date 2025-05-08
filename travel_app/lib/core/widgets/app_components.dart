@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../theme/app_theme.dart';
 import 'common_styles.dart';
+import '../services/currency_service.dart';
 
 /// A collection of reusable UI components styled consistently for the app
 class AppComponents {
@@ -63,72 +64,74 @@ class AppComponents {
     VoidCallback? onTap,
     double height = 160,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: height,
-        width: double.infinity,
-        decoration: CommonStyles.cardDecoration,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(AppTheme.borderRadiusMedium),
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    cachedImage(imageUrl: imageUrl),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.7),
-                          ],
+    return Builder(
+      builder: (context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: height,
+          width: double.infinity,
+          decoration: CommonStyles.cardDecoration(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(AppTheme.borderRadiusMedium),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      cachedImage(imageUrl: imageUrl),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.7),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      bottom: AppTheme.spacingMedium,
-                      left: AppTheme.spacingMedium,
-                      right: AppTheme.spacingMedium,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: CommonStyles.headingSmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (subtitle != null) ...[
-                            const SizedBox(height: AppTheme.spacingXSmall),
+                      Positioned(
+                        bottom: AppTheme.spacingMedium,
+                        left: AppTheme.spacingMedium,
+                        right: AppTheme.spacingMedium,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              subtitle,
-                              style: CommonStyles.caption,
+                              title,
+                              style: CommonStyles.headingSmall(context),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            if (subtitle != null) ...[
+                              const SizedBox(height: AppTheme.spacingXSmall),
+                              Text(
+                                subtitle,
+                                style: CommonStyles.caption(context),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                    if (label != null)
-                      Positioned(
-                        top: AppTheme.spacingSmall,
-                        right: AppTheme.spacingSmall,
-                        child: CommonStyles.badge(text: label),
-                      ),
-                  ],
+                      if (label != null)
+                        Positioned(
+                          top: AppTheme.spacingSmall,
+                          right: AppTheme.spacingSmall,
+                          child: CommonStyles.badge(text: label),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -174,27 +177,35 @@ class AppComponents {
     VoidCallback? onViewAll,
     String viewAllText = 'View All',
   }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.spacingLarge,
-        AppTheme.spacingLarge,
-        AppTheme.spacingLarge,
-        AppTheme.spacingSmall,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: CommonStyles.headingSmall,
-          ),
-          if (onViewAll != null)
-            TextButton(
-              onPressed: onViewAll,
-              style: CommonStyles.textButtonStyle,
-              child: Text(viewAllText),
+    return Builder(
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.spacingLarge,
+          AppTheme.spacingLarge,
+          AppTheme.spacingLarge,
+          AppTheme.spacingSmall,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: CommonStyles.headingSmall(context),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-        ],
+            if (onViewAll != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: TextButton(
+                  onPressed: onViewAll,
+                  style: CommonStyles.textButtonStyle(context),
+                  child: Text(viewAllText),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -209,66 +220,44 @@ class AppComponents {
       vertical: AppTheme.spacingSmall,
     ),
   }) {
-    return Container(
-      margin: margin,
-      // Use explicit measurements to prevent overflow
-      height: 40, // Fixed height
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-        // Use box shadow instead of border to prevent layout shifts
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 1,
-            spreadRadius: 0.5,
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Container(
+          margin: margin,
+          height: 40,
+          decoration: BoxDecoration(
+            color: theme.cardTheme.color,
+            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+            boxShadow: [
+              BoxShadow(
+                color: theme.shadowColor.withOpacity(0.1),
+                blurRadius: 1,
+                spreadRadius: 0.5,
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Center(
-        child: TextField(
-          controller: controller,
-          style: const TextStyle(
-            color: AppTheme.textPrimaryColor,
-            fontSize: AppTheme.fontSizeSmall,
-          ),
-          textAlignVertical: TextAlignVertical.center,
-          decoration: InputDecoration(
-            isCollapsed: true,
-            contentPadding: const EdgeInsets.symmetric(vertical: 10),
-            prefixIcon: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Icon(
+          child: TextField(
+            controller: controller,
+            onChanged: onChanged,
+            decoration: InputDecoration(
+              hintText: hintText,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spacingMedium,
+                vertical: AppTheme.spacingSmall,
+              ),
+              prefixIcon: Icon(
                 Icons.search,
-                color: Colors.grey.shade400,
-                size: AppTheme.iconSizeSmall,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 36,
-              minHeight: 36,
-            ),
-            hintText: hintText,
-            hintStyle: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: AppTheme.fontSizeSmall,
-            ),
-            border: InputBorder.none, // No border
-            suffixIcon: controller.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, size: AppTheme.iconSizeSmall),
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      controller.clear();
-                      onChanged?.call('');
-                    },
-                  )
-                : null,
           ),
-          onChanged: onChanged,
-        ),
-      ),
+        );
+      }
     );
   }
 
@@ -279,11 +268,19 @@ class AppComponents {
     Color? iconColor,
     Color? textColor,
   }) {
-    return CommonStyles.iconWithText(
-      icon: icon,
-      text: label,
-      iconColor: iconColor,
-      textColor: textColor,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: iconColor),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: textColor,
+            fontSize: AppTheme.fontSizeSmall,
+          ),
+        ),
+      ],
     );
   }
 
@@ -319,18 +316,18 @@ class AppComponents {
 
   /// Price display
   static Widget priceDisplay(
-    num price, {
-    String currency = '₹',
-    Color? textColor,
-    double fontSize = AppTheme.fontSizeMedium,
-    FontWeight fontWeight = FontWeight.bold,
+    double amount, {
+    double? fontSize,
+    Color? color,
+    FontWeight fontWeight = FontWeight.w600,
+    Currency? fromCurrency,
   }) {
     return Text(
-      '$currency${price.round()}',
+      CurrencyService.formatAmount(amount, from: fromCurrency),
       style: TextStyle(
-        fontSize: fontSize,
+        fontSize: fontSize ?? AppTheme.fontSizeMedium,
+        color: color ?? AppTheme.textPrimaryColor,
         fontWeight: fontWeight,
-        color: textColor ?? AppTheme.textPrimaryColor,
       ),
     );
   }
@@ -395,7 +392,7 @@ class AppComponents {
                         children: [
                           Text(
                             destination['name'],
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppTheme.textPrimaryColor,
                               fontWeight: FontWeight.bold,
                               fontSize: AppTheme.fontSizeSmall,
@@ -449,7 +446,7 @@ class AppComponents {
       children: tags.map((tag) => Chip(
         label: Text(
           tag,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppTheme.fontSizeXSmall,
           ),
         ),
@@ -506,6 +503,21 @@ class AppComponents {
           ],
         ],
       ),
+    );
+  }
+
+  /// Simple text-based loading indicator
+  static Widget loadingText() {
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Text(
+          'Loading...',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        );
+      }
     );
   }
 } 

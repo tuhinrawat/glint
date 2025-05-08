@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/widgets/nav_bar.dart';
 import '../../models/itinerary.dart';
 import '../../services/itinerary_service.dart';
+import '../../core/widgets/common_styles.dart';
+import '../../core/theme/color_schemes.dart';
 
 class HomePage extends StatefulWidget {
   final ItineraryService itineraryService;
@@ -516,7 +518,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               title: Text(item['user'], style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 14)),
                               subtitle: Text(item['place'], style: TextStyle(color: Colors.black54, fontSize: 12)),
                               trailing: IconButton(
-                                icon: Icon(item['saved'] ? Icons.bookmark : Icons.bookmark_border, color: item['saved'] ? Colors.blue.shade800 : Colors.black54),
+                                icon: Icon(
+                                  item['saved'] ? Icons.bookmark : Icons.bookmark_border,
+                                  color: item['saved']
+                                      ? Theme.of(context).colorScheme.iconActive
+                                      : Theme.of(context).colorScheme.iconInactive,
+                                ),
                                 onPressed: () => _toggleSave(idx),
                               ),
                             ),
@@ -531,17 +538,30 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               child: Row(
                                 children: [
                                   IconButton(
-                                    icon: Icon(Icons.thumb_up, color: item['liked'] ? Colors.green.shade800 : Colors.black54),
+                                    icon: Icon(
+                                      Icons.thumb_up,
+                                      color: item['liked']
+                                          ? Theme.of(context).colorScheme.iconSuccess
+                                          : Theme.of(context).colorScheme.iconInactive,
+                                    ),
                                     onPressed: () => _toggleLike(idx),
                                   ),
                                   Text('${item['likes']}', style: TextStyle(color: Colors.black54, fontSize: 12)),
                                   IconButton(
-                                    icon: Icon(Icons.thumb_down, color: item['disliked'] ? Colors.red.shade800 : Colors.black54),
+                                    icon: Icon(
+                                      Icons.thumb_down,
+                                      color: item['disliked']
+                                          ? Theme.of(context).colorScheme.iconError
+                                          : Theme.of(context).colorScheme.iconInactive,
+                                    ),
                                     onPressed: () => _toggleDislike(idx),
                                   ),
                                   Text('${item['dislikes']}', style: TextStyle(color: Colors.black54, fontSize: 12)),
                                   IconButton(
-                                    icon: const Icon(Icons.share, color: Colors.black54),
+                                    icon: Icon(
+                                      Icons.share,
+                                      color: Theme.of(context).colorScheme.iconSecondary,
+                                    ),
                                     onPressed: () => _shareFeed(idx),
                                   ),
                                 ],

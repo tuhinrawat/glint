@@ -9,6 +9,10 @@ import '../../models/user_level.dart';
 import '../../services/gang_service.dart';
 import '../../services/gamification_service.dart';
 import '../../services/auth_service.dart';
+import '../../core/providers/theme_provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/brand_logo.dart';
+import '../../core/widgets/branded_app_bar.dart';
 import '../gang/gang_edit_dialog.dart';
 import '../gang/gang_invite_dialog.dart';
 import '../gang/travel_preferences_editor.dart';
@@ -17,12 +21,13 @@ import 'preferences_editor.dart';
 import 'preferences_viewer.dart';
 import 'level_progression_card.dart';
 import 'achievements_page.dart';
+import '../../core/widgets/global_app_bar.dart';
 
 class ProfileEditDialog extends StatefulWidget {
   final Map<String, dynamic> userData;
   
   const ProfileEditDialog({required this.userData, super.key});
-  
+
   @override
   State<ProfileEditDialog> createState() => _ProfileEditDialogState();
 }
@@ -43,7 +48,7 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
     _avatarController = TextEditingController(text: widget.userData['avatar']);
     _ageController = TextEditingController(text: '25'); // Default age
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -223,7 +228,7 @@ class _ProfilePageState extends State<ProfilePage> {
     'id': '123',
     'name': 'Aditi Sharma',
     'email': 'aditi.sharma@example.com',
-    'avatar': 'https://randomuser.me/api/portraits/women/44.jpg',
+    'avatar': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
     'location': 'Mumbai, India',
     'bio': 'Adventure seeker | Photography enthusiast | Travel blogger',
     'totalTrips': 12,
@@ -368,14 +373,94 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _showThemeSelector(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.palette_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Theme Preference',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...ThemePreference.values.map((preference) {
+              final isSelected = themeProvider.themePreference == preference;
+              final title = switch (preference) {
+                ThemePreference.system => 'System',
+                ThemePreference.light => 'Light',
+                ThemePreference.dark => 'Dark',
+              };
+              final icon = switch (preference) {
+                ThemePreference.system => Icons.settings_suggest_outlined,
+                ThemePreference.light => Icons.light_mode_outlined,
+                ThemePreference.dark => Icons.dark_mode_outlined,
+              };
+              
+              return ListTile(
+                leading: Icon(
+                  icon,
+                  color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                ),
+                title: Text(
+                  title,
+                  style: TextStyle(
+                    color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                    fontWeight: isSelected ? FontWeight.bold : null,
+                  ),
+                ),
+                trailing: isSelected
+                    ? Icon(
+                        Icons.check_circle,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () {
+                  themeProvider.setThemePreference(preference);
+                  Navigator.pop(context);
+                },
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context, listen: false);
+    final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.colorScheme.background,
+      appBar: const GlobalAppBar(
+        title: 'Profile',
+        showLogo: false,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -386,12 +471,28 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundImage: userData['avatar'] != null 
-                          ? NetworkImage(userData['avatar'])
-                          : null,
-                      child: userData['avatar'] == null
-                          ? const Icon(Icons.person)
-                          : null,
+                      child: ClipOval(
+                        child: userData['avatar'] != null
+                            ? CachedNetworkImage(
+                                imageUrl: userData['avatar']!,
+                                fit: BoxFit.cover,
+                                width: 80,
+                                height: 80,
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                                errorWidget: (context, url, error) => const Icon(
+                                  Icons.person,
+                                  size: 40,
+                                  color: Colors.white54,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Colors.white54,
+                              ),
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -400,16 +501,11 @@ class _ProfilePageState extends State<ProfilePage> {
                         children: [
                           Text(
                             userData['name'] ?? 'Anonymous User',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.headlineMedium,
                           ),
                           Text(
                             userData['email'] ?? 'No email provided',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                           if (!_isLoadingLevel)
                             Chip(
@@ -599,8 +695,27 @@ class _ProfilePageState extends State<ProfilePage> {
                                   children: gang.members.map((member) {
                                     return Chip(
                                       avatar: CircleAvatar(
-                                        backgroundImage: NetworkImage(
-                                          member.avatarUrl ?? 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(member.name)}&background=random'
+                                        child: ClipOval(
+                                          child: CachedNetworkImage(
+                                            imageUrl: member.avatarUrl ?? 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(member.name)}&background=random',
+                                            fit: BoxFit.cover,
+                                            width: 32,
+                                            height: 32,
+                                            placeholder: (context, url) => const Center(
+                                              child: SizedBox(
+                                                width: 16,
+                                                height: 16,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                              ),
+                                            ),
+                                            errorWidget: (context, url, error) => const Icon(
+                                              Icons.person,
+                                              size: 16,
+                                              color: Colors.white54,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                       label: Text(member.name),
@@ -683,16 +798,11 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).textTheme.titleLarge,
         ),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.grey,
-          ),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
     );
@@ -708,17 +818,13 @@ class _ProfilePageState extends State<ProfilePage> {
     return ListTile(
       leading: Icon(
         icon,
-        color: isDestructive ? Colors.red : Colors.white,
+        color: isDestructive ? Theme.of(context).colorScheme.error : null,
       ),
       title: Text(
         title,
-        style: TextStyle(
-          color: isDestructive ? Colors.red : Colors.white,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: isDestructive ? Theme.of(context).colorScheme.error : null,
         ),
-      ),
-      trailing: const Icon(
-        Icons.chevron_right,
-        color: Colors.grey,
       ),
       onTap: onTap,
     );
@@ -750,11 +856,11 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (context) => AlertDialog(
         title: const Text('Logout'),
         content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
+      actions: [
+        TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
+          child: const Text('Cancel'),
+        ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Logout'),

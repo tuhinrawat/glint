@@ -56,7 +56,7 @@ class LevelProgressionCard extends StatelessWidget {
                     children: [
                       Text(
                         currentLevel.title,
-                        style: CommonStyles.headingMedium,
+                        style: CommonStyles.headingMedium(context),
                       ),
                       Text(
                         currentLevel.description,
@@ -86,7 +86,7 @@ class LevelProgressionCard extends StatelessWidget {
                 children: [
                   Text(
                     '${currentLevel.requiredPoints}',
-                    style: const TextStyle(fontSize: AppTheme.fontSizeXSmall),
+                    style: CommonStyles.levelText(context),
                   ),
                   Expanded(
                     child: Padding(
@@ -106,7 +106,7 @@ class LevelProgressionCard extends StatelessWidget {
                   ),
                   Text(
                     '${nextLevel.requiredPoints}',
-                    style: const TextStyle(fontSize: AppTheme.fontSizeXSmall),
+                    style: CommonStyles.levelText(context),
                   ),
                 ],
               ),
@@ -116,17 +116,17 @@ class LevelProgressionCard extends StatelessWidget {
                     ? 'You have reached the highest level!'
                     : 'Next Level: ${nextLevel.title} (${(progress * 100).toInt()}% complete)',
                 style: TextStyle(
-                  color: AppTheme.textSecondaryColor,
                   fontSize: AppTheme.fontSizeSmall,
+                  color: AppTheme.textSecondaryColor,
                 ),
               ),
               if (!isMaxLevel)
                 Text(
                   'Need ${nextLevel.requiredPoints - totalPoints} more points',
                   style: TextStyle(
+                    fontSize: AppTheme.fontSizeSmall,
                     color: AppTheme.secondaryColor,
                     fontWeight: FontWeight.w500,
-                    fontSize: AppTheme.fontSizeSmall,
                   ),
                 ),
             ] else ...[
@@ -140,7 +140,7 @@ class LevelProgressionCard extends StatelessWidget {
                     color: AppTheme.primaryColor,
                     borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Maximum Level Achieved!',
                     style: TextStyle(
                       color: Colors.white,

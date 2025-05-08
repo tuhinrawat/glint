@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../models/booking.dart';
 import '../../services/booking_service.dart';
 import '../../core/widgets/nav_bar.dart';
+import '../../core/theme/color_schemes.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
@@ -336,13 +337,17 @@ class _BookingPageState extends State<BookingPage> with SingleTickerProviderStat
               : step == 2
                   ? Icons.hotel
                   : Icons.directions_car,
-          color: isActive ? Colors.blue : Colors.grey,
+          color: isActive
+              ? Theme.of(context).colorScheme.iconActive
+              : Theme.of(context).colorScheme.iconInactive,
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            color: isActive ? Colors.blue : Colors.grey,
+            color: isActive
+                ? Theme.of(context).colorScheme.iconActive
+                : Theme.of(context).colorScheme.iconInactive,
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           ),
         ),

@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../../models/itinerary.dart';
+import '../../models/travel_post.dart';
+import '../../models/travel_story.dart';
+import '../../models/chat_message.dart';
 import '../../services/itinerary_service.dart';
 import '../../core/widgets/nav_bar.dart';
+import '../../core/widgets/common_styles.dart';
+import '../../core/services/currency_service.dart';
+import '../../core/theme/color_schemes.dart';
 
 class ItineraryPage extends StatefulWidget {
   final ItineraryService service;
@@ -18,11 +24,13 @@ class ItineraryPage extends StatefulWidget {
 class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProviderStateMixin {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  final _pageController = PageController(viewportFraction: 0.88);
   final List<ChatMessage> _messages = [];
   List<Map<String, dynamic>> _suggestedItineraries = [];
   String? _userQuery;
   bool _isLoading = false;
   bool _isChatOpen = false;
+  int _currentDay = 0;
   AnimationController? _animationController;
   Animation<Offset>? _slideAnimation;
 
@@ -211,7 +219,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Book Flight (Budget: ₹$flightCost)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                    Text('Book Flight (Budget: ${CurrencyService.formatAmount(flightCost)})', style: CommonStyles.bookingTitle(context)),
                     const SizedBox(height: 16),
                     TextField(
                       decoration: const InputDecoration(labelText: 'From'),
@@ -300,7 +308,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Book Hotel (Budget: ₹$hotelCost per night)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                    Text('Book Hotel (Budget: ${CurrencyService.formatAmount(hotelCost)} per night)', style: CommonStyles.bookingTitle(context)),
                     const SizedBox(height: 16),
                     TextField(
                       decoration: const InputDecoration(labelText: 'City'),
@@ -401,7 +409,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Book Cab (Budget: ₹$cabCost per day)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                    Text('Book Cab (Budget: ${CurrencyService.formatAmount(cabCost)} per day)', style: CommonStyles.bookingTitle(context)),
                     const SizedBox(height: 16),
                     TextField(
                       decoration: const InputDecoration(labelText: 'From'),
@@ -469,7 +477,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
     }
   }
 
-  void _showDummyFlightResults(BuildContext context, String from, String to, DateTime? depart, int people, int budget) {
+  void _showDummyFlightResults(BuildContext context, String from, String to, DateTime? depart, int people, double budget) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -482,7 +490,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Available Flights (Dummy - Skyscanner, Budget ≤ ₹$budget)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text('Available Flights (Dummy - Skyscanner, Budget ≤ ${CurrencyService.formatAmount(budget)})', style: CommonStyles.sectionTitle(context)),
             const SizedBox(height: 12),
             ...List.generate(3, (i) {
               final price = 4000 + i * 1200;
@@ -490,7 +498,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
               return ListTile(
                 leading: const Icon(Icons.flight_takeoff),
                 title: Text('Flight ${i + 1}: $from → $to'),
-                subtitle: Text('Date: ${depart != null ? '${depart.day}/${depart.month}/${depart.year}' : '-'} | ₹$price | $people people'),
+                subtitle: Text('Date: ${depart != null ? '${depart.day}/${depart.month}/${depart.year}' : '-'} | ${CurrencyService.formatAmount(price)} | $people people'),
                 trailing: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
@@ -506,7 +514,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
     );
   }
 
-  void _showDummyHotelResults(BuildContext context, String city, DateTime? checkin, DateTime? checkout, int people, int budget) {
+  void _showDummyHotelResults(BuildContext context, String city, DateTime? checkin, DateTime? checkout, int people, double budget) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -519,7 +527,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Available Hotels (Dummy, Budget ≤ ₹$budget)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text('Available Hotels (Dummy, Budget ≤ ${CurrencyService.formatAmount(budget)})', style: CommonStyles.sectionTitle(context)),
             const SizedBox(height: 12),
             ...List.generate(3, (i) {
               final price = 2000 + i * 800;
@@ -527,7 +535,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
               return ListTile(
                 leading: const Icon(Icons.hotel),
                 title: Text('Hotel ${i + 1} in $city'),
-                subtitle: Text('Check-in: ${checkin != null ? '${checkin.day}/${checkin.month}/${checkin.year}' : '-'} | Check-out: ${checkout != null ? '${checkout.day}/${checkout.month}/${checkout.year}' : '-'} | ₹$price | $people people'),
+                subtitle: Text('Check-in: ${checkin != null ? '${checkin.day}/${checkin.month}/${checkin.year}' : '-'} | Check-out: ${checkout != null ? '${checkout.day}/${checkout.month}/${checkout.year}' : '-'} | ${CurrencyService.formatAmount(price)} | $people people'),
                 trailing: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
@@ -543,7 +551,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
     );
   }
 
-  void _showDummyCabResults(BuildContext context, String from, String to, DateTime? date, int people, int budget) {
+  void _showDummyCabResults(BuildContext context, String from, String to, DateTime? date, int people, double budget) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -556,7 +564,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Available Cabs (Dummy, Budget ≤ ₹$budget)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text('Available Cabs (Dummy, Budget ≤ ${CurrencyService.formatAmount(budget)})', style: CommonStyles.sectionTitle(context)),
             const SizedBox(height: 12),
             ...List.generate(3, (i) {
               final price = 800 + i * 300;
@@ -564,7 +572,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
               return ListTile(
                 leading: const Icon(Icons.local_taxi),
                 title: Text('Cab ${i + 1}: $from → $to'),
-                subtitle: Text('Date: ${date != null ? '${date.day}/${date.month}/${date.year}' : '-'} | ₹$price | $people people'),
+                subtitle: Text('Date: ${date != null ? '${date.day}/${date.month}/${date.year}' : '-'} | ${CurrencyService.formatAmount(price)} | $people people'),
                 trailing: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
@@ -987,8 +995,6 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
     final dayPlans = itinerary.dayPlans;
     final highlights = dayPlans.expand((d) => d.activities.map((a) => a.name)).toSet().take(4).toList();
     final perPerson = (itinerary.totalCost / itinerary.numberOfPeople).round();
-    final PageController _pageController = PageController(viewportFraction: 0.88);
-    int _currentDay = 0;
     return StatefulBuilder(
       builder: (context, setState) => Center(
         child: AnimatedContainer(
@@ -1022,14 +1028,14 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                           Expanded(
                             child: Text(
                               '${itinerary.destination} · ${dayPlans.length} Days · ${itinerary.numberOfPeople} People',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: Colors.white),
+                              style: CommonStyles.itineraryHeading(context),
                             ),
                           ),
                           Row(
                             children: [
                               Icon(Icons.favorite, color: Colors.pinkAccent.shade100, size: 22),
                               const SizedBox(width: 4),
-                              Text('$likes', style: const TextStyle(color: Colors.white, fontSize: 15)),
+                              Text('$likes', style: CommonStyles.itineraryDetails(context)),
                             ],
                           ),
                         ],
@@ -1039,23 +1045,26 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                         children: [
                           Icon(Icons.calendar_today, size: 20, color: Colors.tealAccent.shade100),
                           const SizedBox(width: 8),
-                          Text('Start: ${itinerary.startDate.day}/${itinerary.startDate.month}/${itinerary.startDate.year}', style: const TextStyle(fontSize: 15, color: Colors.white70)),
+                          Text('Start: ${itinerary.startDate.day}/${itinerary.startDate.month}/${itinerary.startDate.year}', style: CommonStyles.itineraryDetails(context)),
                         ],
                       ),
                       const SizedBox(height: 18),
-                      Text('Budget Summary', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary, fontSize: 16)),
+                      Text('Budget Summary', style: CommonStyles.itineraryHighlight(context)),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.currency_rupee, color: Colors.greenAccent.shade400),
-                          Text('Total: ₹${itinerary.totalCost}  ', style: const TextStyle(fontSize: 16, color: Colors.white)),
+                          Icon(
+                            _getCurrencyIcon(),
+                            color: Colors.greenAccent.shade400
+                          ),
+                          Text('Total: ${CurrencyService.formatAmount(itinerary.totalCost)}', style: CommonStyles.itineraryDetails(context)),
                           const SizedBox(width: 12),
                           Icon(Icons.person, color: Colors.white54),
-                          Text('Per Person: ₹${(itinerary.totalCost / itinerary.numberOfPeople).round()}', style: const TextStyle(fontSize: 16, color: Colors.white)),
+                          Text('Per Person: ${CurrencyService.formatAmount(itinerary.totalCost / itinerary.numberOfPeople)}', style: CommonStyles.itineraryDetails(context)),
                         ],
                       ),
                       const SizedBox(height: 14),
-                      Text('Highlights', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purpleAccent.shade100, fontSize: 16)),
+                      Text('Highlights', style: CommonStyles.itineraryHighlight(context)),
                       const SizedBox(height: 6),
                       Wrap(
                         spacing: 10,
@@ -1068,7 +1077,7 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                         )).toList(),
                       ),
                       const SizedBox(height: 18),
-                      Text('Plan Overview', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey, fontSize: 16)),
+                      Text('Plan Overview', style: CommonStyles.itineraryOverview(context)),
                       const SizedBox(height: 12),
                       SizedBox(
                         height: 280,
@@ -1087,96 +1096,108 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                                 child: Card(
                                   color: const Color(0xFF181A20),
                                   elevation: idx == _currentDay ? 10 : 2,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                                  child: SingleChildScrollView(
-                                    child: Container(
-                                      padding: const EdgeInsets.all(16),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(22),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.today, size: 22, color: Colors.white),
+                                            const SizedBox(width: 10),
+                                            Text('Day ${d.date.day}/${d.date.month}/${d.date.year}', style: CommonStyles.itineraryDayTitle(context)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        if (d.flight != null) ...[
                                           Row(
                                             children: [
-                                              Icon(Icons.today, size: 22, color: Colors.white),
-                                              const SizedBox(width: 10),
-                                              Text('Day ${d.date.day}/${d.date.month}/${d.date.year}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: Colors.white)),
+                                              Icon(
+                                                Icons.flight,
+                                                size: 18,
+                                                color: Theme.of(context).colorScheme.iconPrimary,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  '${d.flight!.airline} - ${d.flight!.from} to ${d.flight!.to} (${d.flight!.time})\n${CurrencyService.formatAmount(d.flight!.cost)}',
+                                                  style: CommonStyles.itineraryDayDetails(context),
+                                                ),
+                                              ),
                                             ],
                                           ),
-                                          const SizedBox(height: 12),
-                                          if (d.flight != null) ...[
-                                            Row(
-                                              children: [
-                                                Icon(Icons.flight, size: 18, color: Colors.blueAccent.shade100),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    '${d.flight!.airline} - ${d.flight!.from} to ${d.flight!.to} (${d.flight!.time})\n₹${d.flight!.cost}',
-                                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                          ],
-                                          if (d.hotel != null) ...[
-                                            Row(
-                                              children: [
-                                                Icon(Icons.hotel, size: 18, color: Colors.purpleAccent.shade100),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    '${d.hotel!.name} ${d.hotel!.checkIn != null ? '(Check-in: ${d.hotel!.checkIn})' : d.hotel!.checkOut != null ? '(Check-out: ${d.hotel!.checkOut})' : ''}\n₹${d.hotel!.costPerNight} per night',
-                                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                          ],
-                                          if (d.cab != null) ...[
-                                            Row(
-                                              children: [
-                                                Icon(Icons.local_taxi, size: 18, color: Colors.amberAccent.shade100),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Text(
-                                                    d.cab!.duration != null
-                                                        ? '${d.cab!.type} - ${d.cab!.duration}\n₹${d.cab!.cost}'
-                                                        : '${d.cab!.type} - ${d.cab!.from} to ${d.cab!.to}\n₹${d.cab!.cost}',
-                                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                          ],
-                                          const Divider(color: Colors.white24),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Activities:',
-                                            style: TextStyle(fontSize: 14, color: Colors.tealAccent.shade100, fontWeight: FontWeight.w500),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          ...List.generate(
-                                            d.activities.length,
-                                            (i) => Padding(
-                                              padding: const EdgeInsets.symmetric(vertical: 2),
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.circle, size: 6, color: Colors.tealAccent.shade100),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Text(
-                                                      d.activities[i].name,
-                                                      style: const TextStyle(fontSize: 13, color: Colors.white70),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
+                                          const SizedBox(height: 8),
                                         ],
-                                      ),
+                                        if (d.hotel != null) ...[
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.hotel,
+                                                size: 18,
+                                                color: Theme.of(context).colorScheme.iconPrimary,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  '${d.hotel!.name} ${d.hotel!.checkIn != null ? '(Check-in: ${d.hotel!.checkIn})' : d.hotel!.checkOut != null ? '(Check-out: ${d.hotel!.checkOut})' : ''}\n${CurrencyService.formatAmount(d.hotel!.costPerNight)} per night',
+                                                  style: CommonStyles.itineraryDayDetails(context),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                        ],
+                                        if (d.cab != null) ...[
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.local_taxi,
+                                                size: 18,
+                                                color: Theme.of(context).colorScheme.iconPrimary,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  d.cab!.duration != null
+                                                      ? '${d.cab!.type} - ${d.cab!.duration}\n${CurrencyService.formatAmount(d.cab!.cost)}'
+                                                      : '${d.cab!.type} - ${d.cab!.from} to ${d.cab!.to}\n${CurrencyService.formatAmount(d.cab!.cost)}',
+                                                  style: CommonStyles.itineraryDayDetails(context),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                        ],
+                                        const Divider(color: Colors.white24),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Activities:',
+                                          style: TextStyle(fontSize: 14, color: Colors.tealAccent.shade100, fontWeight: FontWeight.w500),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        ...List.generate(
+                                          d.activities.length,
+                                          (i) => Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 2),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.circle, size: 6, color: Colors.tealAccent.shade100),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    d.activities[i].name,
+                                                    style: CommonStyles.itineraryDayDetails(context),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -1191,14 +1212,15 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: List.generate(
                             dayPlans.length,
-                            (idx) => AnimatedContainer(
-                              duration: const Duration(milliseconds: 250),
-                              width: idx == _currentDay ? 14 : 8,
-                              height: idx == _currentDay ? 14 : 8,
+                            (index) => Container(
+                              width: 8,
+                              height: 8,
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: idx == _currentDay ? Theme.of(context).colorScheme.primary : Colors.white24,
+                                color: index == _currentDay
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.grey[600],
                               ),
                             ),
                           ),
@@ -1206,32 +1228,50 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                       ),
                       const SizedBox(height: 18),
                       // Reviews
-                      Text('Reviews', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orangeAccent.shade100, fontSize: 16)),
+                      Text('Reviews', style: CommonStyles.itineraryHighlight(context)),
                       const SizedBox(height: 6),
                       ...reviews.map<Widget>((r) => ListTile(
                         leading: CircleAvatar(backgroundImage: NetworkImage(r['avatar'])),
                         title: Text(r['user'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        subtitle: Text(r['review'], style: const TextStyle(color: Colors.white70)),
+                        subtitle: Text(r['review'], style: CommonStyles.itineraryDayDetails(context)),
                       )),
                       const SizedBox(height: 14),
                       // Health, Sustainability, Well-being
-                      Text('Health Precautions', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent.shade100, fontSize: 15)),
+                      Text('Health Precautions', style: CommonStyles.itinerarySubheading(context)),
                       ...health.map<Widget>((h) => Padding(
                         padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
-                        child: Row(children: [Icon(Icons.health_and_safety, color: Colors.redAccent.shade100, size: 18), const SizedBox(width: 6), Expanded(child: Text(h, style: const TextStyle(color: Colors.white70, fontSize: 13)))]),
-                      )),
+                        child: Row(
+                          children: [
+                            Icon(Icons.health_and_safety, color: Colors.redAccent.shade100, size: 18),
+                            const SizedBox(width: 6),
+                            Expanded(child: Text(h, style: CommonStyles.itineraryDayDetails(context))),
+                          ],
+                        ),
+                      )).toList(),
                       const SizedBox(height: 8),
-                      Text('Sustainability', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.greenAccent.shade100, fontSize: 15)),
+                      Text('Sustainability', style: CommonStyles.itinerarySubheading(context)),
                       ...sustainability.map<Widget>((s) => Padding(
                         padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
-                        child: Row(children: [Icon(Icons.eco, color: Colors.greenAccent.shade100, size: 18), const SizedBox(width: 6), Expanded(child: Text(s, style: const TextStyle(color: Colors.white70, fontSize: 13)))]),
-                      )),
+                        child: Row(
+                          children: [
+                            Icon(Icons.eco, color: Colors.greenAccent.shade100, size: 18),
+                            const SizedBox(width: 6),
+                            Expanded(child: Text(s, style: CommonStyles.itineraryDayDetails(context))),
+                          ],
+                        ),
+                      )).toList(),
                       const SizedBox(height: 8),
-                      Text('Well-being', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent.shade100, fontSize: 15)),
+                      Text('Well-being', style: CommonStyles.itinerarySubheading(context)),
                       ...wellBeing.map<Widget>((w) => Padding(
                         padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
-                        child: Row(children: [Icon(Icons.self_improvement, color: Colors.blueAccent.shade100, size: 18), const SizedBox(width: 6), Expanded(child: Text(w, style: const TextStyle(color: Colors.white70, fontSize: 13)))]),
-                      )),
+                        child: Row(
+                          children: [
+                            Icon(Icons.self_improvement, size: 18, color: Theme.of(context).colorScheme.iconPrimary),
+                            const SizedBox(width: 6),
+                            Expanded(child: Text(w, style: CommonStyles.itineraryDayDetails(context))),
+                          ],
+                        ),
+                      )).toList(),
                       const SizedBox(height: 18),
                       // Booking buttons
                       SingleChildScrollView(
@@ -1239,68 +1279,34 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            SizedBox(
-                              width: 140,
-                              child: ElevatedButton.icon(
-                                icon: const Icon(Icons.flight),
-                                label: const Text('Book Flight'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                                  elevation: 0,
-                                ),
-                                onPressed: () => _showBookingSheet(context, 'flight', itinerary),
-                              ),
+                            _buildBookingButton(
+                              icon: Icons.flight,
+                              label: 'Book Flight',
+                              color: Theme.of(context).colorScheme.primary,
+                              onPressed: () => _showBookingSheet(context, 'flight', itinerary),
                             ),
                             const SizedBox(width: 10),
-                            SizedBox(
-                              width: 140,
-                              child: ElevatedButton.icon(
-                                icon: const Icon(Icons.hotel),
-                                label: const Text('Book Hotel'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.purpleAccent.shade400,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                                  elevation: 0,
-                                ),
-                                onPressed: () => _showBookingSheet(context, 'hotel', itinerary),
-                              ),
+                            _buildBookingButton(
+                              icon: Icons.hotel,
+                              label: 'Book Hotel',
+                              color: Colors.purpleAccent.shade400,
+                              onPressed: () => _showBookingSheet(context, 'hotel', itinerary),
                             ),
                             const SizedBox(width: 10),
-                            SizedBox(
-                              width: 140,
-                              child: ElevatedButton.icon(
-                                icon: const Icon(Icons.local_taxi),
-                                label: const Text('Book Cab'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.tealAccent.shade400,
-                                  foregroundColor: Colors.black,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                                  elevation: 0,
-                                ),
-                                onPressed: () => _showBookingSheet(context, 'cab', itinerary),
-                              ),
+                            _buildBookingButton(
+                              icon: Icons.local_taxi,
+                              label: 'Book Cab',
+                              color: Colors.tealAccent.shade400,
+                              textColor: Colors.black,
+                              onPressed: () => _showBookingSheet(context, 'cab', itinerary),
                             ),
                             const SizedBox(width: 10),
-                            SizedBox(
-                              width: 160,
-                              child: ElevatedButton.icon(
-                                icon: const Icon(Icons.event_available),
-                                label: const Text('Book Activities'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orangeAccent.shade200,
-                                  foregroundColor: Colors.black,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                                  elevation: 0,
-                                ),
-                                onPressed: () => _showBookingSheet(context, 'activities', itinerary),
-                              ),
+                            _buildBookingButton(
+                              icon: Icons.event_available,
+                              label: 'Book Activities',
+                              color: Colors.orangeAccent.shade200,
+                              textColor: Colors.black,
+                              onPressed: () => _showBookingSheet(context, 'activities', itinerary),
                             ),
                           ],
                         ),
@@ -1316,269 +1322,162 @@ class _ItineraryPageState extends State<ItineraryPage> with SingleTickerProvider
     );
   }
 
+  Widget _buildBookingButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    Color? textColor,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: label == 'Book Activities' ? 160 : 140,
+      child: ElevatedButton.icon(
+        icon: Icon(icon),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: textColor ?? Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+          elevation: 0,
+        ),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  IconData _getCurrencyIcon() {
+    return Icons.currency_rupee;  // Default to INR, can be made dynamic based on currency
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Ensure animations are initialized
-    if (_animationController == null) {
-      _initializeAnimations();
-    }
-
-    final List<String> suggestions = [
-      "Plan a trip to Goa for 4 people in December",
-      "Suggest a 5-day adventure in Manali for 2 friends",
-      "What's the best time to visit Kerala?",
-      "I want a cultural trip to Jaipur for 6 people",
-      "Plan a budget trip to Ladakh for 7 days",
-    ];
-
-    return Material(
-      type: MaterialType.transparency,
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.blue.shade300,
-                  Colors.purple.shade300,
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          "Travel Feed",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontSize: 20,
-                          ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF181A20),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                // Stories section
+                _buildStoriesSection(),
+                
+                // Main content
+                Expanded(
+                  child: _isLoading
+                    ? Center(
+                        child: SpinKitPulse(
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 50.0,
                         ),
+                      )
+                    : ListView(
+                        physics: const BouncingScrollPhysics(),
+                        children: [
+                          // Social feed posts
+                          ..._socialFeed.map((post) => _buildSocialFeedPost(post)),
+                          
+                          // Suggested itineraries
+                          ..._suggestedItineraries.map((item) {
+                            final itinerary = item['itinerary'];
+                            return _buildItineraryCardWithExtras(
+                              itinerary,
+                              likes: item['likes'],
+                              reviews: item['reviews'],
+                              health: item['health'],
+                              sustainability: item['sustainability'],
+                              wellBeing: item['wellBeing'],
+                            );
+                          }),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.refresh, size: 28),
-                        color: Theme.of(context).colorScheme.primary,
-                        tooltip: "Refresh feed",
-                        onPressed: () {
-                          _generateMockItineraries();
-                          _generateMockSocialFeed();
-                        },
-                      ),
-                    ],
-                  ),
-                  Expanded(
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : CustomScrollView(
-                            slivers: [
-                              SliverToBoxAdapter(
-                                child: _buildStoriesSection(),
-                              ),
-                              SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, index) {
-                                    if (index < _socialFeed.length) {
-                                      return _buildSocialFeedPost(_socialFeed[index]);
-                                    }
-                                    final itineraryIndex = index - _socialFeed.length;
-                                    if (itineraryIndex >= _suggestedItineraries.length) {
-                                      return null;
-                                    }
-                                    final data = _suggestedItineraries[itineraryIndex];
-                                    final itinerary = data["itinerary"] as Itinerary;
-                                    final likes = data["likes"] as int;
-                                    final reviews = data["reviews"] as List;
-                                    final health = data["health"] as List;
-                                    final sustainability = data["sustainability"] as List;
-                                    final wellBeing = data["wellBeing"] as List;
-                                    return _buildItineraryCardWithExtras(
-                                      itinerary,
-                                      likes: likes,
-                                      reviews: reviews,
-                                      health: health,
-                                      sustainability: sustainability,
-                                      wellBeing: wellBeing,
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-          // Floating Chat Button
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: FloatingActionButton(
-              heroTag: 'itineraryPageFAB',
-              onPressed: _toggleChat,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Icon(
-                _isChatOpen ? Icons.close : Icons.chat_bubble_outline,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          // Sliding Chat Panel
-          if (_isChatOpen && _slideAnimation != null)
-            Positioned.fill(
-              child: SlideTransition(
+            
+            // Chat overlay
+            if (_isChatOpen)
+              SlideTransition(
                 position: _slideAnimation!,
                 child: Container(
-                  color: Colors.black54,
-                  child: GestureDetector(
-                    onTap: () => _toggleChat(),
-                    child: Container(
-                      color: Colors.transparent,
-                      child: Column(
+                  color: const Color(0xFF181A20),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          itemCount: _messages.length,
+                          itemBuilder: (context, index) {
+                            final message = _messages[index];
+                            return Align(
+                              alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: message.isUser ? Theme.of(context).colorScheme.primary : Colors.grey[800],
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  message.text,
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
                         children: [
-                          const Spacer(),
-                          Container(
-                            height: MediaQuery.of(context).size.height * 0.7,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).scaffoldBackgroundColor,
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                          Expanded(
+                            child: TextField(
+                              controller: _messageController,
+                              decoration: InputDecoration(
+                                hintText: 'Type your message...',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[800],
+                              ),
+                              style: const TextStyle(color: Colors.white),
                             ),
-                            child: Column(
-                              children: [
-                                // Handle bar
-                                Center(
-                                  child: Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 12),
-                                    width: 40,
-                                    height: 4,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.withOpacity(0.3),
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Container(
-                                    width: double.infinity,
-                                    color: Colors.transparent,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "Suggestions",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).colorScheme.primary,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 4,
-                                          children: suggestions.map((prompt) => ActionChip(
-                                            label: Text(prompt, style: const TextStyle(color: Colors.white)),
-                                            backgroundColor: Colors.white.withOpacity(0.10),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                            side: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.25)),
-                                            onPressed: () {
-                                              _messageController.text = prompt;
-                                              _processUserMessage(prompt);
-                                            },
-                                          )).toList(),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          "Tip: You can ask for a trip by destination, group size, days, season, or travel style!",
-                                          style: TextStyle(color: Colors.white70, fontSize: 13),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(12.0),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).cardColor,
-                                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: TextField(
-                                          controller: _messageController,
-                                          style: const TextStyle(color: Colors.white),
-                                          decoration: InputDecoration(
-                                            hintText: 'Type your message...',
-                                            hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                                            border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(24.0),
-                                              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(24.0),
-                                              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(24.0),
-                                              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
-                                            ),
-                                            contentPadding: const EdgeInsets.symmetric(
-                                              horizontal: 16.0,
-                                              vertical: 8.0,
-                                            ),
-                                            filled: true,
-                                            fillColor: Colors.white.withOpacity(0.1),
-                                          ),
-                                          onSubmitted: (message) {
-                                            if (message.isNotEmpty) {
-                                              _processUserMessage(message);
-                                              _messageController.clear();
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Theme.of(context).colorScheme.primary,
-                                        ),
-                                        child: IconButton(
-                                          icon: const Icon(Icons.send),
-                                          color: Colors.white,
-                                          onPressed: () {
-                                            final message = _messageController.text;
-                                            if (message.isNotEmpty) {
-                                              _processUserMessage(message);
-                                              _messageController.clear();
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.send, color: Colors.white),
+                            onPressed: () {
+                              final message = _messageController.text.trim();
+                              if (message.isNotEmpty) {
+                                _processUserMessage(message);
+                                _messageController.clear();
+                              }
+                            },
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _toggleChat,
+        child: Icon(_isChatOpen ? Icons.close : Icons.chat),
+      ),
+      bottomNavigationBar: NavBar(
+        currentIndex: 1,  // My trips tab
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacementNamed(context, '/home');
+          } else if (index == 2) {
+            Navigator.pushReplacementNamed(context, '/profile');
+          }
+        },
       ),
     );
   }

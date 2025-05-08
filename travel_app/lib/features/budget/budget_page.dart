@@ -24,19 +24,6 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
   late Animation<double> _scaleAnimation;
   Budget? _budget;
 
-  final List<Color> _chartColors = [
-    const Color(0xFFFF6F61),
-    const Color(0xFF1E88E5),
-    const Color(0xFFFFD700),
-    const Color(0xFF4CAF50),
-    const Color(0xFF9C27B0),
-    const Color(0xFFFF9800),
-    const Color(0xFF00BCD4),
-    const Color(0xFFE91E63),
-    const Color(0xFF3F51B5),
-    const Color(0xFF009688),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -127,6 +114,8 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -134,8 +123,8 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.blue.shade300,
-              Colors.purple.shade300,
+              theme.colorScheme.primary.withOpacity(0.8),
+              theme.colorScheme.secondary.withOpacity(0.8),
             ],
           ),
         ),
@@ -147,18 +136,16 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
+                  Text(
                     'Budget Allocation',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: theme.colorScheme.onPrimary,
                     ),
                   ),
                   const SizedBox(height: 24),
                   // Total Budget Input
                   Card(
-                    color: Colors.white.withOpacity(0.9),
+                    color: theme.colorScheme.surface.withOpacity(0.9),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -167,12 +154,9 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Total Budget (₹)',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
@@ -210,7 +194,7 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
                   const SizedBox(height: 16),
                   // Group Size Dropdown
                   Card(
-                    color: Colors.white.withOpacity(0.9),
+                    color: theme.colorScheme.surface.withOpacity(0.9),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -219,12 +203,9 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Group Size',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           DropdownButtonFormField<int>(
@@ -257,7 +238,7 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
                   const SizedBox(height: 16),
                   // Pie Chart
                   Card(
-                    color: Colors.white.withOpacity(0.9),
+                    color: theme.colorScheme.surface.withOpacity(0.9),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -266,12 +247,9 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Budget Split',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 16),
                           SizedBox(
@@ -283,7 +261,7 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
                                   return PieChartSectionData(
                                     value: entry.value,
                                     title: '${entry.key}\n₹${entry.value.toStringAsFixed(0)}',
-                                    color: _chartColors[index % _chartColors.length],
+                                    color: getChartColor(index),
                                     radius: 100,
                                     titleStyle: const TextStyle(
                                       fontSize: 12,
@@ -304,7 +282,7 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
                   const SizedBox(height: 16),
                   // Contributions List
                   Card(
-                    color: Colors.white.withOpacity(0.9),
+                    color: theme.colorScheme.surface.withOpacity(0.9),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -313,12 +291,9 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Contributions',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           ReorderableListView.builder(
@@ -424,4 +399,6 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
       ),
     );
   }
+
+  Color getChartColor(int index) => Theme.of(context).colorScheme.getChartColor(index);
 } 

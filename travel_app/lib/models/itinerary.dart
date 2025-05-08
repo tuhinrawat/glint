@@ -177,47 +177,151 @@ class Accommodation {
 }
 
 class DayPlan {
+  final int day;
   final DateTime date;
+  final Flight? flight;
+  final Hotel? hotel;
+  final Cab? cab;
   final List<Activity> activities;
-  final List<Transportation> localTransports;
-  final Accommodation? accommodation;
-  final Transportation? flight;
-  final Accommodation? hotel;
-  final Transportation? cab;
   final double totalCost;
 
   DayPlan({
+    required this.day,
     required this.date,
-    required this.activities,
-    required this.localTransports,
-    this.accommodation,
     this.flight,
     this.hotel,
     this.cab,
+    required this.activities,
     required this.totalCost,
   });
 
   Map<String, dynamic> toJson() => {
+    'day': day,
     'date': date.toIso8601String(),
-    'activities': activities.map((a) => a.toJson()).toList(),
-    'localTransports': localTransports.map((t) => t.toJson()).toList(),
-    'accommodation': accommodation?.toJson(),
     'flight': flight?.toJson(),
     'hotel': hotel?.toJson(),
     'cab': cab?.toJson(),
+    'activities': activities.map((a) => a.name).toList(),
     'totalCost': totalCost,
   };
 
-  factory DayPlan.fromJson(Map<String, dynamic> json) => DayPlan(
-    date: DateTime.parse(json['date']),
-    activities: (json['activities'] as List).map((a) => Activity.fromJson(a)).toList(),
-    localTransports: (json['localTransports'] as List).map((t) => Transportation.fromJson(t)).toList(),
-    accommodation: json['accommodation'] != null ? Accommodation.fromJson(json['accommodation']) : null,
-    flight: json['flight'] != null ? Transportation.fromJson(json['flight']) : null,
-    hotel: json['hotel'] != null ? Accommodation.fromJson(json['hotel']) : null,
-    cab: json['cab'] != null ? Transportation.fromJson(json['cab']) : null,
-    totalCost: (json['totalCost'] as num).toDouble(),
-  );
+  factory DayPlan.fromJson(Map<String, dynamic> json) {
+    return DayPlan(
+      day: json['day'] as int,
+      date: DateTime.parse(json['date'] as String),
+      flight: json['flight'] != null ? Flight.fromJson(json['flight']) : null,
+      hotel: json['hotel'] != null ? Hotel.fromJson(json['hotel']) : null,
+      cab: json['cab'] != null ? Cab.fromJson(json['cab']) : null,
+      activities: (json['activities'] as List).map((a) => Activity(
+        name: a as String,
+        description: 'Activity description',
+        startTime: const TimeOfDay(hour: 9, minute: 0),
+        endTime: const TimeOfDay(hour: 17, minute: 0),
+        location: 'TBD',
+        cost: 0.0,
+        tags: const [],
+      )).toList(),
+      totalCost: (json['totalCost'] as num).toDouble(),
+    );
+  }
+}
+
+class Flight {
+  final String from;
+  final String to;
+  final String time;
+  final String airline;
+  final double cost;
+
+  Flight({
+    required this.from,
+    required this.to,
+    required this.time,
+    required this.airline,
+    required this.cost,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'from': from,
+    'to': to,
+    'time': time,
+    'airline': airline,
+    'cost': cost,
+  };
+
+  factory Flight.fromJson(Map<String, dynamic> json) {
+    return Flight(
+      from: json['from'] as String,
+      to: json['to'] as String,
+      time: json['time'] as String,
+      airline: json['airline'] as String,
+      cost: (json['cost'] as num).toDouble(),
+    );
+  }
+}
+
+class Hotel {
+  final String name;
+  final String? checkIn;
+  final String? checkOut;
+  final double costPerNight;
+
+  Hotel({
+    required this.name,
+    this.checkIn,
+    this.checkOut,
+    required this.costPerNight,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'checkIn': checkIn,
+    'checkOut': checkOut,
+    'cost': costPerNight,
+  };
+
+  factory Hotel.fromJson(Map<String, dynamic> json) {
+    return Hotel(
+      name: json['name'] as String,
+      checkIn: json['checkIn'] as String?,
+      checkOut: json['checkOut'] as String?,
+      costPerNight: (json['cost'] as num).toDouble(),
+    );
+  }
+}
+
+class Cab {
+  final String? from;
+  final String? to;
+  final String type;
+  final String? duration;
+  final double cost;
+
+  Cab({
+    this.from,
+    this.to,
+    required this.type,
+    this.duration,
+    required this.cost,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'from': from,
+    'to': to,
+    'type': type,
+    'duration': duration,
+    'cost': cost,
+  };
+
+  factory Cab.fromJson(Map<String, dynamic> json) {
+    return Cab(
+      from: json['from'] as String?,
+      to: json['to'] as String?,
+      type: json['type'] as String,
+      duration: json['duration'] as String?,
+      cost: (json['cost'] as num).toDouble(),
+    );
+  }
 }
 
 class Itinerary {
@@ -225,44 +329,36 @@ class Itinerary {
   final String destination;
   final DateTime startDate;
   final DateTime endDate;
-  final String creatorId;
-  final String creatorName;
-  final String? creatorAvatar;
-  final List<String> images;
   final List<DayPlan> dayPlans;
-  final Transportation? arrivalTransport;
-  final Transportation? departureTransport;
   final double totalCost;
   final int numberOfPeople;
+  final String travelType;
+  final List<String> images;
+  final double suggestedFlightCost;
+  final double suggestedHotelCostPerNight;
+  final double suggestedCabCostPerDay;
   final double rating;
-  final List<Map<String, dynamic>> reviews;
+  final String creatorName;
+  final String? creatorAvatar;
   final List<String> tags;
-  final bool isCompleted;
-  final Map<String, dynamic> weatherInfo;
-  final Map<String, dynamic> additionalInfo;
-
-  double get costPerPerson => totalCost / numberOfPeople;
 
   Itinerary({
     required this.id,
     required this.destination,
     required this.startDate,
     required this.endDate,
-    required this.creatorId,
-    required this.creatorName,
-    this.creatorAvatar,
-    required this.images,
     required this.dayPlans,
-    this.arrivalTransport,
-    this.departureTransport,
     required this.totalCost,
     required this.numberOfPeople,
+    required this.travelType,
+    required this.images,
+    required this.suggestedFlightCost,
+    required this.suggestedHotelCostPerNight,
+    required this.suggestedCabCostPerDay,
     this.rating = 0.0,
-    this.reviews = const [],
+    required this.creatorName,
+    this.creatorAvatar,
     this.tags = const [],
-    this.isCompleted = false,
-    this.weatherInfo = const {},
-    this.additionalInfo = const {},
   });
 
   Map<String, dynamic> toJson() => {
@@ -270,94 +366,78 @@ class Itinerary {
     'destination': destination,
     'startDate': startDate.toIso8601String(),
     'endDate': endDate.toIso8601String(),
-    'creatorId': creatorId,
+    'days': dayPlans.map((d) => d.toJson()).toList(),
+    'totalCost': totalCost,
+    'groupSize': numberOfPeople,
+    'travelType': travelType,
+    'images': images,
+    'suggestedFlightCost': suggestedFlightCost,
+    'suggestedHotelCostPerNight': suggestedHotelCostPerNight,
+    'suggestedCabCostPerDay': suggestedCabCostPerDay,
+    'rating': rating,
     'creatorName': creatorName,
     'creatorAvatar': creatorAvatar,
-    'images': images,
-    'dayPlans': dayPlans.map((d) => d.toJson()).toList(),
-    'arrivalTransport': arrivalTransport?.toJson(),
-    'departureTransport': departureTransport?.toJson(),
-    'totalCost': totalCost,
-    'numberOfPeople': numberOfPeople,
-    'rating': rating,
-    'reviews': reviews,
     'tags': tags,
-    'isCompleted': isCompleted,
-    'weatherInfo': weatherInfo,
-    'additionalInfo': additionalInfo,
   };
 
-  factory Itinerary.fromJson(Map<String, dynamic> json) => Itinerary(
-    id: json['id'] as String,
-    destination: json['destination'] as String,
-    startDate: DateTime.parse(json['startDate']),
-    endDate: DateTime.parse(json['endDate']),
-    creatorId: json['creatorId'] as String,
-    creatorName: json['creatorName'] as String,
-    creatorAvatar: json['creatorAvatar'] as String?,
-    images: List<String>.from(json['images']),
-    dayPlans: (json['dayPlans'] as List).map((d) => DayPlan.fromJson(d)).toList(),
-    arrivalTransport: json['arrivalTransport'] != null ? Transportation.fromJson(json['arrivalTransport']) : null,
-    departureTransport: json['departureTransport'] != null ? Transportation.fromJson(json['departureTransport']) : null,
-    totalCost: (json['totalCost'] as num).toDouble(),
-    numberOfPeople: json['numberOfPeople'] as int,
-    rating: (json['rating'] as num).toDouble(),
-    reviews: List<Map<String, dynamic>>.from(json['reviews']),
-    tags: List<String>.from(json['tags']),
-    isCompleted: json['isCompleted'] as bool,
-    weatherInfo: json['weatherInfo'] as Map<String, dynamic>,
-    additionalInfo: json['additionalInfo'] as Map<String, dynamic>,
-  );
+  factory Itinerary.fromJson(Map<String, dynamic> json) {
+    final totalCost = (json['totalCost'] as num).toDouble();
+    // Calculate suggested costs if not provided
+    final suggestedFlightCost = (json['suggestedFlightCost'] as num?)?.toDouble() ?? totalCost * 0.4;
+    final suggestedHotelCostPerNight = (json['suggestedHotelCostPerNight'] as num?)?.toDouble() ?? (totalCost * 0.4) / 5;
+    final suggestedCabCostPerDay = (json['suggestedCabCostPerDay'] as num?)?.toDouble() ?? (totalCost * 0.2) / 5;
+
+    return Itinerary(
+      id: json['id'] as String,
+      destination: json['destination'] as String,
+      startDate: DateTime.parse(json['startDate'] as String),
+      endDate: DateTime.parse(json['endDate'] as String),
+      dayPlans: (json['days'] as List).map((d) => DayPlan.fromJson(d)).toList(),
+      totalCost: totalCost,
+      numberOfPeople: json['groupSize'] as int,
+      travelType: json['travelType'] as String,
+      images: (json['images'] as List).cast<String>(),
+      suggestedFlightCost: suggestedFlightCost,
+      suggestedHotelCostPerNight: suggestedHotelCostPerNight,
+      suggestedCabCostPerDay: suggestedCabCostPerDay,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      creatorName: json['creatorName'] as String,
+      creatorAvatar: json['creatorAvatar'] as String?,
+      tags: (json['tags'] as List?)?.cast<String>() ?? const [],
+    );
+  }
 
   Itinerary copyWith({
     String? destination,
     List<DayPlan>? dayPlans,
     int? numberOfPeople,
     double? totalCost,
-    Transportation? arrivalTransport,
-    Transportation? departureTransport,
+    double? suggestedFlightCost,
+    double? suggestedHotelCostPerNight,
+    double? suggestedCabCostPerDay,
+    DateTime? endDate,
     double? rating,
-    List<Map<String, dynamic>>? reviews,
+    String? creatorName,
+    String? creatorAvatar,
     List<String>? tags,
-    bool? isCompleted,
-    Map<String, dynamic>? weatherInfo,
-    Map<String, dynamic>? additionalInfo,
   }) {
     return Itinerary(
       id: id,
       destination: destination ?? this.destination,
       startDate: startDate,
-      endDate: endDate,
-      creatorId: creatorId,
-      creatorName: creatorName,
-      creatorAvatar: creatorAvatar,
-      images: images,
+      endDate: endDate ?? this.endDate,
       dayPlans: dayPlans ?? this.dayPlans,
-      arrivalTransport: arrivalTransport ?? this.arrivalTransport,
-      departureTransport: departureTransport ?? this.departureTransport,
       totalCost: totalCost ?? this.totalCost,
       numberOfPeople: numberOfPeople ?? this.numberOfPeople,
+      travelType: travelType,
+      images: images,
+      suggestedFlightCost: suggestedFlightCost ?? this.suggestedFlightCost,
+      suggestedHotelCostPerNight: suggestedHotelCostPerNight ?? this.suggestedHotelCostPerNight,
+      suggestedCabCostPerDay: suggestedCabCostPerDay ?? this.suggestedCabCostPerDay,
       rating: rating ?? this.rating,
-      reviews: reviews ?? this.reviews,
+      creatorName: creatorName ?? this.creatorName,
+      creatorAvatar: creatorAvatar ?? this.creatorAvatar,
       tags: tags ?? this.tags,
-      isCompleted: isCompleted ?? this.isCompleted,
-      weatherInfo: weatherInfo ?? this.weatherInfo,
-      additionalInfo: additionalInfo ?? this.additionalInfo,
     );
-  }
-
-  // Helper method to get suggested flight cost
-  int get suggestedFlightCost {
-    return (totalCost * 0.4).round();
-  }
-
-  // Helper method to get suggested hotel cost per night
-  int get suggestedHotelCostPerNight {
-    return (totalCost * 0.4 / dayPlans.length).round();
-  }
-
-  // Helper method to get suggested cab cost per day
-  int get suggestedCabCostPerDay {
-    return (totalCost * 0.2 / dayPlans.length).round();
   }
 } 

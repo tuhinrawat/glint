@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import '../../core/theme/app_theme.dart';
 
 class TripPlannerPage extends StatefulWidget {
   const TripPlannerPage({super.key});
@@ -133,6 +134,10 @@ class _TripPlannerPageState extends State<TripPlannerPage> {
                         foregroundColor: Theme.of(context).colorScheme.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
                       ),
                       child: Text(_suggestedPrompts[index]),
