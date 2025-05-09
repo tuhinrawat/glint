@@ -68,7 +68,7 @@ class ItineraryService {
     },
     'Ladakh': {
       'subtitle': 'High Altitude & Serenity',
-      'image': 'https://images.unsplash.com/photo-1589556264800-08294b7d5337',
+      'image': 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23',
       'budget': 50000.0,
       'activities': [
         'Pangong Lake',
@@ -197,8 +197,9 @@ class ItineraryService {
       suggestedHotelCostPerNight: (budget * 0.4) / 5,
       suggestedCabCostPerDay: (budget * 0.2) / 5,
       creatorName: 'Travel Assistant',
-      creatorAvatar: null,
-      tags: ['generated'],
+      tags: ['generated', travelType.toLowerCase()],
+      status: TripStatus.planning,
+      rating: 5.0,
     );
   }
 
@@ -321,8 +322,9 @@ class ItineraryService {
       suggestedHotelCostPerNight: (newBudget * 0.4) / 5,
       suggestedCabCostPerDay: (newBudget * 0.2) / 5,
       creatorName: itinerary.creatorName,
-      creatorAvatar: itinerary.creatorAvatar,
       tags: itinerary.tags,
+      status: itinerary.status,
+      rating: itinerary.rating,
     );
 
     // Save adjusted itinerary
@@ -360,8 +362,90 @@ class ItineraryService {
       suggestedHotelCostPerNight: ((newBudget ?? currentItinerary.totalCost) * 0.4) / 5,
       suggestedCabCostPerDay: ((newBudget ?? currentItinerary.totalCost) * 0.2) / 5,
       creatorName: currentItinerary.creatorName,
-      creatorAvatar: currentItinerary.creatorAvatar,
       tags: currentItinerary.tags,
+      status: currentItinerary.status,
+      rating: currentItinerary.rating,
     );
+  }
+
+  Future<List<Itinerary>> getUpcomingTrips() async {
+    // Simulate network delay
+    await Future.delayed(const Duration(seconds: 1));
+    
+    // Return mock data matching what's used in MyTripsPage
+    return [
+      Itinerary(
+        id: '1',
+        destination: 'Bali, Indonesia',
+        startDate: DateTime(2024, 3, 15),
+        endDate: DateTime(2024, 3, 22),
+        status: TripStatus.confirmed,
+        images: ['https://images.unsplash.com/photo-1537996194471-e657df975ab4'],
+        totalCost: 120000.0,
+        numberOfPeople: 3,
+        creatorName: 'You',
+        rating: 4.8,
+        travelType: 'leisure',
+        suggestedFlightCost: 48000.0,
+        suggestedHotelCostPerNight: 9600.0,
+        suggestedCabCostPerDay: 4800.0,
+        tags: ['leisure', 'beach', 'tropical'],
+        dayPlans: [
+          DayPlan(
+            day: 1,
+            date: DateTime(2024, 3, 15),
+            activities: [
+              Activity(
+                name: 'Beach Visit',
+                description: 'Visit the beautiful Nusa Dua beach',
+                cost: 1000.0,
+                location: 'Nusa Dua',
+                startTime: TimeOfDay(hour: 9, minute: 0),
+                endTime: TimeOfDay(hour: 14, minute: 0),
+                rating: 4.8,
+                tags: ['beach', 'relaxation'],
+              ),
+            ],
+            totalCost: 1000.0,
+          ),
+        ],
+      ),
+      Itinerary(
+        id: '2',
+        destination: 'Swiss Alps',
+        startDate: DateTime(2024, 4, 5),
+        endDate: DateTime(2024, 4, 12),
+        status: TripStatus.planning,
+        images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4'],
+        totalCost: 250000.0,
+        numberOfPeople: 2,
+        creatorName: 'You',
+        rating: 4.9,
+        travelType: 'adventure',
+        suggestedFlightCost: 100000.0,
+        suggestedHotelCostPerNight: 20000.0,
+        suggestedCabCostPerDay: 10000.0,
+        tags: ['adventure', 'skiing', 'mountains'],
+        dayPlans: [
+          DayPlan(
+            day: 1,
+            date: DateTime(2024, 4, 5),
+            activities: [
+              Activity(
+                name: 'Skiing',
+                description: 'Skiing at the Swiss Alps',
+                cost: 5000.0,
+                location: 'Swiss Alps',
+                startTime: TimeOfDay(hour: 9, minute: 0),
+                endTime: TimeOfDay(hour: 16, minute: 0),
+                rating: 4.9,
+                tags: ['skiing', 'adventure'],
+              ),
+            ],
+            totalCost: 5000.0,
+          ),
+        ],
+      ),
+    ];
   }
 } 

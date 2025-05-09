@@ -39,16 +39,40 @@ void main() {
   test('ItineraryService saves and retrieves itinerary', () async {
     final now = DateTime.now();
     final mockItinerary = '''{
+      "id": "test_123",
       "destination": "Goa",
-      "days": [
-        {"day": 1, "activities": ["Beach visit", "Local food"]},
-        {"day": 2, "activities": ["Water sports", "Shopping"]},
-        {"day": 3, "activities": ["Sightseeing", "Nightlife"]}
-      ],
-      "budget": 20000,
+      "startDate": "${now.toIso8601String()}",
+      "endDate": "${now.add(const Duration(days: 5)).toIso8601String()}",
+      "totalCost": 20000.0,
+      "numberOfPeople": 2,
       "travelType": "Leisure",
-      "groupSize": 2,
-      "startDate": "${now.toIso8601String()}"
+      "images": ["https://example.com/image.jpg"],
+      "suggestedFlightCost": 8000.0,
+      "suggestedHotelCostPerNight": 1600.0,
+      "suggestedCabCostPerDay": 800.0,
+      "rating": 5.0,
+      "creatorName": "Travel Assistant",
+      "tags": ["generated", "leisure"],
+      "status": "TripStatus.planning",
+      "dayPlans": [
+        {
+          "day": 1,
+          "date": "${now.toIso8601String()}",
+          "activities": [
+            {
+              "name": "Beach visit",
+              "description": "Visit the beautiful beach",
+              "cost": 1000.0,
+              "location": "Calangute Beach",
+              "startTime": {"hour": 9, "minute": 0},
+              "endTime": {"hour": 14, "minute": 0},
+              "tags": ["beach", "relaxation"]
+            }
+          ],
+          "totalCost": 1000.0
+        }
+      ],
+      "isCompleted": false
     }''';
 
     when(mockStorage.write(key: anyNamed('key'), value: anyNamed('value')))
@@ -67,6 +91,9 @@ void main() {
     final savedItinerary = await service.getSavedItinerary('Goa', now);
     expect(savedItinerary, isNotNull);
     expect(savedItinerary!.destination, 'Goa');
-    expect(savedItinerary.days.length, 3);
+    expect(savedItinerary.dayPlans.length, 1);
+    expect(savedItinerary.totalCost, 20000.0);
+    expect(savedItinerary.travelType, 'Leisure');
+    expect(savedItinerary.numberOfPeople, 2);
   });
 } 

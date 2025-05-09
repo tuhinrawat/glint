@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 
+enum TripStatus {
+  planning,
+  confirmed,
+  completed,
+  cancelled
+}
+
 class Activity {
   final String name;
   final String description;
@@ -11,6 +18,7 @@ class Activity {
   final List<String> tags;
   final double rating;
   final List<String> reviews;
+  final List<Payment>? payments;
 
   Activity({
     required this.name,
@@ -23,6 +31,7 @@ class Activity {
     required this.tags,
     this.rating = 0.0,
     this.reviews = const [],
+    this.payments,
   });
 
   Map<String, dynamic> toJson() => {
@@ -36,6 +45,7 @@ class Activity {
     'tags': tags,
     'rating': rating,
     'reviews': reviews,
+    'payments': payments?.map((p) => p.toJson()).toList(),
   };
 
   factory Activity.fromJson(Map<String, dynamic> json) {
@@ -52,8 +62,39 @@ class Activity {
       tags: List<String>.from(json['tags']),
       rating: (json['rating'] as num).toDouble(),
       reviews: List<String>.from(json['reviews']),
+      payments: json['payments'] != null
+          ? List<Payment>.from(json['payments'].map((p) => Payment.fromJson(p)))
+          : null,
     );
   }
+}
+
+class Payment {
+  final String description;
+  final double amount;
+  final String paidBy;
+  final DateTime date;
+
+  Payment({
+    required this.description,
+    required this.amount,
+    required this.paidBy,
+    required this.date,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'description': description,
+    'amount': amount,
+    'paidBy': paidBy,
+    'date': date.toIso8601String(),
+  };
+
+  factory Payment.fromJson(Map<String, dynamic> json) => Payment(
+    description: json['description'] as String,
+    amount: (json['amount'] as num).toDouble(),
+    paidBy: json['paidBy'] as String,
+    date: DateTime.parse(json['date'] as String),
+  );
 }
 
 class Transportation {
@@ -329,7 +370,6 @@ class Itinerary {
   final String destination;
   final DateTime startDate;
   final DateTime endDate;
-  final List<DayPlan> dayPlans;
   final double totalCost;
   final int numberOfPeople;
   final String travelType;
@@ -339,15 +379,17 @@ class Itinerary {
   final double suggestedCabCostPerDay;
   final double rating;
   final String creatorName;
-  final String? creatorAvatar;
   final List<String> tags;
+  final TripStatus status;
+  final List<DayPlan> dayPlans;
+  final bool isCompleted;
+  final DateTime? completedAt;
 
   Itinerary({
     required this.id,
     required this.destination,
     required this.startDate,
     required this.endDate,
-    required this.dayPlans,
     required this.totalCost,
     required this.numberOfPeople,
     required this.travelType,
@@ -355,20 +397,26 @@ class Itinerary {
     required this.suggestedFlightCost,
     required this.suggestedHotelCostPerNight,
     required this.suggestedCabCostPerDay,
-    this.rating = 0.0,
+    required this.rating,
     required this.creatorName,
-    this.creatorAvatar,
-    this.tags = const [],
+    required this.tags,
+    required this.status,
+    required this.dayPlans,
+    this.isCompleted = false,
+    this.completedAt,
   });
+
+  bool get isActive => !isCompleted && 
+      startDate.isBefore(DateTime.now()) && 
+      endDate.isAfter(DateTime.now());
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'destination': destination,
     'startDate': startDate.toIso8601String(),
     'endDate': endDate.toIso8601String(),
-    'days': dayPlans.map((d) => d.toJson()).toList(),
     'totalCost': totalCost,
-    'groupSize': numberOfPeople,
+    'numberOfPeople': numberOfPeople,
     'travelType': travelType,
     'images': images,
     'suggestedFlightCost': suggestedFlightCost,
@@ -376,68 +424,78 @@ class Itinerary {
     'suggestedCabCostPerDay': suggestedCabCostPerDay,
     'rating': rating,
     'creatorName': creatorName,
-    'creatorAvatar': creatorAvatar,
     'tags': tags,
+    'status': status.toString(),
+    'dayPlans': dayPlans.map((plan) => plan.toJson()).toList(),
+    'isCompleted': isCompleted,
+    'completedAt': completedAt?.toIso8601String(),
   };
 
-  factory Itinerary.fromJson(Map<String, dynamic> json) {
-    final totalCost = (json['totalCost'] as num).toDouble();
-    // Calculate suggested costs if not provided
-    final suggestedFlightCost = (json['suggestedFlightCost'] as num?)?.toDouble() ?? totalCost * 0.4;
-    final suggestedHotelCostPerNight = (json['suggestedHotelCostPerNight'] as num?)?.toDouble() ?? (totalCost * 0.4) / 5;
-    final suggestedCabCostPerDay = (json['suggestedCabCostPerDay'] as num?)?.toDouble() ?? (totalCost * 0.2) / 5;
-
-    return Itinerary(
-      id: json['id'] as String,
-      destination: json['destination'] as String,
-      startDate: DateTime.parse(json['startDate'] as String),
-      endDate: DateTime.parse(json['endDate'] as String),
-      dayPlans: (json['days'] as List).map((d) => DayPlan.fromJson(d)).toList(),
-      totalCost: totalCost,
-      numberOfPeople: json['groupSize'] as int,
-      travelType: json['travelType'] as String,
-      images: (json['images'] as List).cast<String>(),
-      suggestedFlightCost: suggestedFlightCost,
-      suggestedHotelCostPerNight: suggestedHotelCostPerNight,
-      suggestedCabCostPerDay: suggestedCabCostPerDay,
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      creatorName: json['creatorName'] as String,
-      creatorAvatar: json['creatorAvatar'] as String?,
-      tags: (json['tags'] as List?)?.cast<String>() ?? const [],
-    );
-  }
+  factory Itinerary.fromJson(Map<String, dynamic> json) => Itinerary(
+    id: json['id'] as String,
+    destination: json['destination'] as String,
+    startDate: DateTime.parse(json['startDate'] as String),
+    endDate: DateTime.parse(json['endDate'] as String),
+    totalCost: json['totalCost'] as double,
+    numberOfPeople: json['numberOfPeople'] as int,
+    travelType: json['travelType'] as String,
+    images: (json['images'] as List).cast<String>(),
+    suggestedFlightCost: json['suggestedFlightCost'] as double,
+    suggestedHotelCostPerNight: json['suggestedHotelCostPerNight'] as double,
+    suggestedCabCostPerDay: json['suggestedCabCostPerDay'] as double,
+    rating: json['rating'] as double,
+    creatorName: json['creatorName'] as String,
+    tags: (json['tags'] as List).cast<String>(),
+    status: TripStatus.values.firstWhere(
+      (e) => e.toString() == json['status'],
+      orElse: () => TripStatus.planning,
+    ),
+    dayPlans: (json['dayPlans'] as List)
+        .map((plan) => DayPlan.fromJson(plan as Map<String, dynamic>))
+        .toList(),
+    isCompleted: json['isCompleted'] as bool? ?? false,
+    completedAt: json['completedAt'] != null 
+        ? DateTime.parse(json['completedAt'] as String)
+        : null,
+  );
 
   Itinerary copyWith({
+    String? id,
     String? destination,
-    List<DayPlan>? dayPlans,
-    int? numberOfPeople,
+    DateTime? startDate,
+    DateTime? endDate,
     double? totalCost,
+    int? numberOfPeople,
+    String? travelType,
+    List<String>? images,
     double? suggestedFlightCost,
     double? suggestedHotelCostPerNight,
     double? suggestedCabCostPerDay,
-    DateTime? endDate,
     double? rating,
     String? creatorName,
-    String? creatorAvatar,
     List<String>? tags,
-  }) {
-    return Itinerary(
-      id: id,
-      destination: destination ?? this.destination,
-      startDate: startDate,
-      endDate: endDate ?? this.endDate,
-      dayPlans: dayPlans ?? this.dayPlans,
-      totalCost: totalCost ?? this.totalCost,
-      numberOfPeople: numberOfPeople ?? this.numberOfPeople,
-      travelType: travelType,
-      images: images,
-      suggestedFlightCost: suggestedFlightCost ?? this.suggestedFlightCost,
-      suggestedHotelCostPerNight: suggestedHotelCostPerNight ?? this.suggestedHotelCostPerNight,
-      suggestedCabCostPerDay: suggestedCabCostPerDay ?? this.suggestedCabCostPerDay,
-      rating: rating ?? this.rating,
-      creatorName: creatorName ?? this.creatorName,
-      creatorAvatar: creatorAvatar ?? this.creatorAvatar,
-      tags: tags ?? this.tags,
-    );
-  }
+    TripStatus? status,
+    List<DayPlan>? dayPlans,
+    bool? isCompleted,
+    DateTime? completedAt,
+  }) => Itinerary(
+    id: id ?? this.id,
+    destination: destination ?? this.destination,
+    startDate: startDate ?? this.startDate,
+    endDate: endDate ?? this.endDate,
+    totalCost: totalCost ?? this.totalCost,
+    numberOfPeople: numberOfPeople ?? this.numberOfPeople,
+    travelType: travelType ?? this.travelType,
+    images: images ?? this.images,
+    suggestedFlightCost: suggestedFlightCost ?? this.suggestedFlightCost,
+    suggestedHotelCostPerNight: suggestedHotelCostPerNight ?? this.suggestedHotelCostPerNight,
+    suggestedCabCostPerDay: suggestedCabCostPerDay ?? this.suggestedCabCostPerDay,
+    rating: rating ?? this.rating,
+    creatorName: creatorName ?? this.creatorName,
+    tags: tags ?? this.tags,
+    status: status ?? this.status,
+    dayPlans: dayPlans ?? this.dayPlans,
+    isCompleted: isCompleted ?? this.isCompleted,
+    completedAt: completedAt ?? this.completedAt,
+  );
 } 
