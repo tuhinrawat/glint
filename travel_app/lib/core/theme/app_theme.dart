@@ -5,23 +5,23 @@ import 'color_schemes.dart';
 
 class AppTheme {
   // Primary Colors
-  static const Color primaryColor = Color(0xFF7B6EF6);  // Modern purple
-  static const Color secondaryColor = Color(0xFF4CD471);  // Mint green
-  static const Color backgroundColor = Color(0xFF1C1C23);  // Dark charcoal
-  static const Color surfaceColor = Color(0xFF282830);    // Slightly lighter charcoal
-  static const Color errorColor = Color(0xFFFF8FA3);      // Soft pink
-  static const Color warningColor = Color(0xFFFFB84C);    // Warm yellow
+  static const Color primaryColor = Color(0xFF3498DB);    // Bright Blue
+  static const Color secondaryColor = Color(0xFF1ABC9C);  // Bright Teal
+  static const Color backgroundColor = Color(0xFF1A1A2E); // Deep Navy
+  static const Color surfaceColor = Color(0xFF16213E);    // Navy Blue
+  static const Color errorColor = Color(0xFFE74C3C);      // Crimson
+  static const Color warningColor = Color(0xFFF1C40F);    // Yellow
 
   // Additional Colors
-  static const Color accentPink = Color(0xFFFF8FA3);
-  static const Color accentYellow = Color(0xFFFFB84C);
-  static const Color accentPurple = Color(0xFF7B6EF6);
-  static const Color accentGreen = Color(0xFF4CD471);
+  static const Color accentPurple = Color(0xFF9B59B6);   // Bright Purple
+  static const Color accentTeal = Color(0xFF1ABC9C);      // Bright Teal
+  static const Color accentBlue = Color(0xFF3498DB);      // Bright Blue
+  static const Color accentDarkPurple = Color(0xFF8E44AD); // Dark Purple
 
   // Text Colors
   static const Color textPrimaryColor = Colors.white;
-  static const Color textSecondaryColor = Color(0xFFAAAAAA);  // Light gray
-  static const Color textTertiaryColor = Color(0xFF666666);   // Dark gray
+  static const Color textSecondaryColor = Color(0xFFE5E5E5);  // Light Gray
+  static const Color textTertiaryColor = Color(0xFF4A5568);   // Blue Gray
 
   // Platform-specific base font size
   static double get _baseFontSize => Platform.isIOS ? 16.0 : 16.0;
@@ -113,18 +113,18 @@ class AppTheme {
   // Create the base theme
   static ThemeData get darkTheme {
     final ColorScheme colorScheme = ColorScheme.dark(
-      primary: const Color(0xFFE67E22), // Deep Saffron
-      secondary: const Color(0xFFFFB300), // Golden Amber
-      error: const Color(0xFFD32F2F), // Crimson Red
-      background: const Color(0xFF212121), // Dark Slate
-      surface: const Color(0xFF2E2E2E), // Charcoal Gray
-      onPrimary: const Color(0xFFECEFF1), // Off-White
-      onSecondary: const Color(0xFFECEFF1), // Off-White
-      onBackground: const Color(0xFFECEFF1), // Off-White
-      onSurface: const Color(0xFFECEFF1), // Off-White
-      onError: const Color(0xFFECEFF1), // Off-White
-      primaryContainer: const Color(0xFF2E7D32), // Dark Teal
-      outline: const Color(0xFFB0BEC5), // Soft Gray
+      primary: const Color(0xFF3498DB),    // Bright Blue
+      secondary: const Color(0xFF1ABC9C),   // Bright Teal
+      error: const Color(0xFFE74C3C),       // Crimson
+      background: const Color(0xFF1A1A2E),  // Deep Navy
+      surface: const Color(0xFF16213E),     // Navy Blue
+      onPrimary: const Color(0xFFFFFFFF),   // White
+      onSecondary: const Color(0xFFFFFFFF), // White
+      onBackground: const Color(0xFFFFFFFF), // White
+      onSurface: const Color(0xFFFFFFFF),   // White
+      onError: const Color(0xFFFFFFFF),     // White
+      primaryContainer: const Color(0xFF2980B9), // Darker Blue
+      outline: const Color(0xFF4A5568),     // Blue Gray
     );
 
     return ThemeData(
@@ -250,17 +250,17 @@ class AppTheme {
   // Light theme
   static ThemeData get lightTheme {
     final ColorScheme colorScheme = ColorScheme.light(
-      primary: const Color(0xFFFF8C66), // Soft Saffron
-      secondary: const Color(0xFFFFD54F), // Warm Yellow
-      error: const Color(0xFFFF6B6B), // Coral Red
-      background: const Color(0xFFF5F7FA), // Off-White
-      surface: const Color(0xFFFFFFFF), // White
-      onPrimary: const Color(0xFFFFFFFF), // White
-      onSecondary: const Color(0xFF4A4A4A), // Dark Gray
-      onBackground: const Color(0xFF4A4A4A), // Dark Gray
-      onSurface: const Color(0xFF4A4A4A), // Dark Gray
-      onError: const Color(0xFFFFFFFF), // White
-      primaryContainer: const Color(0xFF4DB6AC), // Teal Blue
+      primary: const Color(0xFF2D3E50),    // Deep Blue
+      secondary: const Color(0xFF16A085),   // Teal
+      error: const Color(0xFFE74C3C),       // Crimson
+      background: const Color(0xFFF5F7FA),  // Off-White
+      surface: const Color(0xFFFFFFFF),     // White
+      onPrimary: const Color(0xFFFFFFFF),   // White
+      onSecondary: const Color(0xFFFFFFFF), // White
+      onBackground: const Color(0xFF2C3E50), // Dark Blue-Gray
+      onSurface: const Color(0xFF2C3E50),   // Dark Blue-Gray
+      onError: const Color(0xFFFFFFFF),     // White
+      primaryContainer: const Color(0xFF3498DB), // Bright Blue
     );
 
     return ThemeData(

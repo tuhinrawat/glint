@@ -29,16 +29,16 @@ extension CustomColorScheme on ColorScheme {
       : const Color(0xFFEBEBEB);  // Lighter gray
 
   // Brand Colors
-  Color get brandPrimary => const Color(0xFF7B6EF6);
+  Color get brandPrimary => const Color(0xFF3498DB);  // Bright Blue
   Color get brandSecondary => brightness == Brightness.dark
-      ? const Color(0xFF4CD471)  // Mint green
-      : const Color(0xFF3CC461);  // Slightly darker mint
+      ? const Color(0xFF1ABC9C)  // Bright Teal
+      : const Color(0xFF16A085);  // Darker Teal
   
   // Accent Colors
-  Color get accent1 => const Color(0xFFFF8FA3);  // Pink
-  Color get accent2 => const Color(0xFFFFB84C);  // Yellow
-  Color get accent3 => const Color(0xFF4CD471);  // Green
-  Color get accent4 => const Color(0xFF7B6EF6);  // Purple
+  Color get accent1 => const Color(0xFF9B59B6);  // Purple
+  Color get accent2 => const Color(0xFF1ABC9C);  // Teal
+  Color get accent3 => const Color(0xFF3498DB);  // Blue
+  Color get accent4 => const Color(0xFF8E44AD);  // Dark Purple
 
   // Text Colors
   Color get textPrimary => brightness == Brightness.dark
@@ -54,15 +54,15 @@ extension CustomColorScheme on ColorScheme {
       : const Color(0xFF8F8F8F);
 
   // Status Colors
-  Color get success => const Color(0xFF4CD471);
-  Color get warning => const Color(0xFFFFB84C);
-  Color get error => const Color(0xFFFF8FA3);
-  Color get info => const Color(0xFF7B6EF6);
+  Color get success => const Color(0xFF1ABC9C);  // Teal
+  Color get warning => const Color(0xFFF1C40F);  // Yellow
+  Color get error => const Color(0xFFE74C3C);    // Crimson
+  Color get info => const Color(0xFF3498DB);     // Blue
 
   // Interactive Colors
   Color get interactive => brightness == Brightness.dark
-      ? const Color(0xFF7B6EF6)  // Modern purple
-      : const Color(0xFF6B5EE6);  // Slightly darker purple
+      ? const Color(0xFF3498DB)  // Bright Blue
+      : const Color(0xFF2980B9);  // Darker Blue
   Color get interactiveHover => primary.withOpacity(0.9);
   Color get interactivePressed => primary.withOpacity(0.8);
   Color get interactiveDisabled => onSurface.withOpacity(0.38);
@@ -118,55 +118,55 @@ extension ChartColors on ColorScheme {
 
 /// Light Color Scheme
 final lightColorScheme = ColorScheme.light(
-  primary: const Color(0xFF6B5EE6),      // Slightly darker purple
-  primaryContainer: const Color(0xFF7B6EF6),  // Modern purple
-  secondary: const Color(0xFF3CC461),     // Slightly darker mint
-  secondaryContainer: const Color(0xFF4CD471),  // Mint green
-  tertiary: const Color(0xFFFFA83C),      // Slightly darker yellow
-  tertiaryContainer: const Color(0xFFFFB84C),  // Warm yellow
+  primary: const Color(0xFF2D3E50),      // Deep Blue
+  primaryContainer: const Color(0xFF3498DB),  // Bright Blue
+  secondary: const Color(0xFF16A085),     // Teal
+  secondaryContainer: const Color(0xFF1ABC9C),  // Bright Teal
+  tertiary: const Color(0xFF8E44AD),      // Royal Purple
+  tertiaryContainer: const Color(0xFF9B59B6),  // Bright Purple
   surface: Colors.white,
   background: Colors.white,
-  error: const Color(0xFFFF7F93),         // Slightly darker pink
+  error: const Color(0xFFE74C3C),         // Crimson
   onPrimary: Colors.white,
-  onSecondary: Colors.black,
-  onTertiary: Colors.black,
-  onSurface: const Color(0xFF1C1C23),     // Dark charcoal
-  onBackground: const Color(0xFF1C1C23),
-  onError: Colors.black,
+  onSecondary: Colors.white,
+  onTertiary: Colors.white,
+  onSurface: const Color(0xFF2C3E50),     // Dark Blue-Gray
+  onBackground: const Color(0xFF2C3E50),
+  onError: Colors.white,
   brightness: Brightness.light,
 );
 
 /// Dark Color Scheme
 final darkColorScheme = ColorScheme(
   brightness: Brightness.dark,
-  primary: const Color(0xFF7B6EF6),      // Modern purple
+  primary: const Color(0xFF3498DB),      // Bright Blue
   onPrimary: Colors.white,
-  primaryContainer: const Color(0xFF6B5EE6),  // Slightly darker purple
+  primaryContainer: const Color(0xFF2980B9),  // Darker Blue
   onPrimaryContainer: Colors.white,
-  secondary: const Color(0xFF4CD471),     // Mint green
-  onSecondary: Colors.black,
-  secondaryContainer: const Color(0xFF3CC461),  // Slightly darker mint
-  onSecondaryContainer: Colors.black,
-  tertiary: const Color(0xFFFFB84C),      // Warm yellow
-  onTertiary: Colors.black,
-  tertiaryContainer: const Color(0xFFFFA83C),  // Slightly darker yellow
-  onTertiaryContainer: Colors.black,
-  error: const Color(0xFFFF8FA3),         // Soft pink
-  onError: Colors.black,
-  errorContainer: const Color(0xFFFF7F93),  // Slightly darker pink
-  onErrorContainer: Colors.black,
-  background: const Color(0xFF1C1C23),    // Dark charcoal
+  secondary: const Color(0xFF1ABC9C),     // Bright Teal
+  onSecondary: Colors.white,
+  secondaryContainer: const Color(0xFF16A085),  // Darker Teal
+  onSecondaryContainer: Colors.white,
+  tertiary: const Color(0xFF9B59B6),      // Bright Purple
+  onTertiary: Colors.white,
+  tertiaryContainer: const Color(0xFF8E44AD),  // Darker Purple
+  onTertiaryContainer: Colors.white,
+  error: const Color(0xFFE74C3C),         // Crimson
+  onError: Colors.white,
+  errorContainer: const Color(0xFFC0392B),  // Darker Crimson
+  onErrorContainer: Colors.white,
+  background: const Color(0xFF1A1A2E),    // Deep Navy
   onBackground: Colors.white,
-  surface: const Color(0xFF282830),       // Slightly lighter charcoal
+  surface: const Color(0xFF16213E),       // Navy Blue
   onSurface: Colors.white,
-  surfaceVariant: const Color(0xFF32323A),  // Even lighter charcoal
-  onSurfaceVariant: const Color(0xFFEEEEEE),  // Very light gray
-  outline: const Color(0xFF666666),       // Dark gray
-  outlineVariant: const Color(0xFF444444),  // Darker gray
+  surfaceVariant: const Color(0xFF0F3460),  // Rich Navy
+  onSurfaceVariant: const Color(0xFFE5E5E5),  // Light Gray
+  outline: const Color(0xFF4A5568),       // Blue Gray
+  outlineVariant: const Color(0xFF2D3748),  // Darker Blue Gray
   shadow: Colors.black,
   scrim: Colors.black,
   inverseSurface: Colors.white,
-  onInverseSurface: const Color(0xFF1C1C23),  // Dark charcoal
-  inversePrimary: const Color(0xFF6B5EE6),  // Slightly darker purple
-  surfaceTint: const Color(0xFF7B6EF6),   // Modern purple
+  onInverseSurface: const Color(0xFF1A1A2E),  // Deep Navy
+  inversePrimary: const Color(0xFF2980B9),  // Darker Blue
+  surfaceTint: const Color(0xFF3498DB),   // Bright Blue
 ); 
