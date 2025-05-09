@@ -9,6 +9,7 @@ class Gang {
   final DateTime createdAt;
   final String createdBy;
   final TravelPreferences groupPreferences;
+  final String avatar;
 
   Gang({
     required this.id,
@@ -18,6 +19,7 @@ class Gang {
     required this.createdAt,
     required this.createdBy,
     required this.groupPreferences,
+    this.avatar = 'https://images.unsplash.com/photo-1478145046317-39f10e56b5e9',
   });
 
   Gang copyWith({
@@ -28,6 +30,7 @@ class Gang {
     DateTime? createdAt,
     String? createdBy,
     TravelPreferences? groupPreferences,
+    String? avatar,
   }) {
     return Gang(
       id: id ?? this.id,
@@ -37,6 +40,7 @@ class Gang {
       createdAt: createdAt ?? this.createdAt,
       createdBy: createdBy ?? this.createdBy,
       groupPreferences: groupPreferences ?? this.groupPreferences,
+      avatar: avatar ?? this.avatar,
     );
   }
 
@@ -124,6 +128,7 @@ class Gang {
       'createdAt': createdAt.toIso8601String(),
       'createdBy': createdBy,
       'groupPreferences': groupPreferences.toJson(),
+      'avatar': avatar,
     };
   }
 
@@ -140,6 +145,7 @@ class Gang {
       groupPreferences: TravelPreferences.fromJson(
         json['groupPreferences'] as Map<String, dynamic>,
       ),
+      avatar: json['avatar'] as String? ?? 'https://images.unsplash.com/photo-1478145046317-39f10e56b5e9',
     );
   }
 }

@@ -243,18 +243,19 @@ class _ProfilePageState extends State<ProfilePage> {
     super.initState();
     _loadGangsAndInvitations();
     _loadUserLevel();
-    // Initialize with default preferences - in a real app, this would come from a user service
     _preferences = TravelPreferences.defaultPreferences();
     
-    // Update userData with auth info if available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authService = Provider.of<AuthService>(context, listen: false);
-      if (authService.isLoggedIn && authService.userId != null) {
+      if (authService.isLoggedIn) {
         setState(() {
-          userData['id'] = authService.userId;
-          if (authService.userName != null) userData['name'] = authService.userName;
-          if (authService.userEmail != null) userData['email'] = authService.userEmail;
-          if (authService.userAvatar != null) userData['avatar'] = authService.userAvatar;
+          userData['email'] = authService.userEmail;
+          if (authService.userName != null) {
+            userData['name'] = authService.userName;
+          }
+          if (authService.userAvatar != null) {
+            userData['avatar'] = authService.userAvatar;
+          }
         });
       }
     });
@@ -454,433 +455,261 @@ class _ProfilePageState extends State<ProfilePage> {
     
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
-      appBar: const GlobalAppBar(
-        title: 'Profile',
-        showLogo: false,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Profile Header
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      child: ClipOval(
-                        child: userData['avatar'] != null
-                            ? CachedNetworkImage(
-                                imageUrl: userData['avatar']!,
-                                fit: BoxFit.cover,
-                                width: 80,
-                                height: 80,
-                                placeholder: (context, url) => const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                                errorWidget: (context, url, error) => const Icon(
-                                  Icons.person,
-                                  size: 40,
-                                  color: Colors.white54,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.person,
-                                size: 40,
-                                color: Colors.white54,
-                              ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            userData['name'] ?? 'Anonymous User',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          Text(
-                            userData['email'] ?? 'No email provided',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          if (!_isLoadingLevel)
-                            Chip(
-                              backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                              label: Text(
-                                _currentLevel.title,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 10,
-                                ),
-                              ),
-                              avatar: Icon(
-                                Icons.psychology,
-                                color: Theme.of(context).colorScheme.primary,
-                                size: 10,
-                              ),
-                              labelPadding: EdgeInsets.zero,
-                              padding: const EdgeInsets.all(2),
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
+      body: _isLoadingLevel || _isLoadingGangs
+        ? Center(
+            child: SpinKitPulse(
+              color: theme.colorScheme.primary,
+              size: 50.0,
+            ),
+          )
+        : RefreshIndicator(
+            onRefresh: () async {
+              await _loadGangsAndInvitations();
+              await _loadUserLevel();
+            },
+            child: CustomScrollView(
+              slivers: [
+                // Profile Header
+                SliverToBoxAdapter(
+                  child: _buildProfileHeader(theme),
                 ),
-              ),
-
-              // Stats Row
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildStat('Trips', (userData['totalTrips'] ?? 0).toString()),
-                    _buildStat('Countries', (userData['countries'] ?? 0).toString()),
-                    _buildStat('Followers', (userData['followers'] ?? 0).toString()),
-                    _buildStat('Points', _totalPoints.toString()),
-                  ],
+                // Rest of the content...
+                SliverToBoxAdapter(
+                  child: _buildStatsRow(theme),
                 ),
-              ),
-
-              // Level Progression
-              if (_isLoadingLevel)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(),
-                  ),
-                )
-              else
-                LevelProgressionCard(
-                  currentLevel: _currentLevel,
-                  nextLevel: _nextLevel,
-                  progress: _progress,
-                  totalPoints: _totalPoints,
+                SliverToBoxAdapter(
+                  child: _buildLevelProgressionCard(),
                 ),
-
-              const Divider(height: 32),
-
-              // Travel Gangs Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Travel Gangs',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: _createGang,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Create Gang'),
-                    ),
-                  ],
+                SliverToBoxAdapter(
+                  child: _buildPreferencesSection(),
                 ),
-              ),
-
-              if (_isLoadingGangs)
-                const Center(child: CircularProgressIndicator())
-              else ...[
-                // Pending Invitations
-                if (_pendingInvitations.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Card(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Text(
-                              'Pending Invitations',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _pendingInvitations.length,
-                            itemBuilder: (context, index) {
-                              final invitation = _pendingInvitations[index];
-                              return ListTile(
-                                title: Text(invitation.gangName),
-                                subtitle: Text('From: ${invitation.inviterName}'),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    TextButton(
-                                      onPressed: () => _handleInvitation(invitation, true),
-                                      child: const Text('Accept'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => _handleInvitation(invitation, false),
-                                      child: const Text('Decline'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // My Gangs
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _myGangs.length,
-                  itemBuilder: (context, index) {
-                    final gang = _myGangs[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ListTile(
-                            title: Text(
-                              gang.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text('${gang.members.length} members'),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.person_add),
-                                  onPressed: () => _inviteToGang(gang),
-                                  tooltip: 'Invite Member',
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => _editGang(gang),
-                                  tooltip: 'Edit Gang',
-                                ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Members',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: gang.members.map((member) {
-                                    return Chip(
-                                      avatar: CircleAvatar(
-                                        child: ClipOval(
-                                          child: CachedNetworkImage(
-                                            imageUrl: member.avatarUrl ?? 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(member.name)}&background=random',
-                                            fit: BoxFit.cover,
-                                            width: 32,
-                                            height: 32,
-                                            placeholder: (context, url) => const Center(
-                                              child: SizedBox(
-                                                width: 16,
-                                                height: 16,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                ),
-                                              ),
-                                            ),
-                                            errorWidget: (context, url, error) => const Icon(
-                                              Icons.person,
-                                              size: 16,
-                                              color: Colors.white54,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      label: Text(member.name),
-                                    );
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                SliverToBoxAdapter(
+                  child: _buildGangsSection(),
+                ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: kBottomNavigationBarHeight + 16),
                 ),
               ],
-
-              const Divider(height: 32),
-
-              // Travel Preferences Section
-              PreferencesViewer(
-                preferences: _preferences,
-                isEditable: true,
-                onEdit: _editPreferences,
-              ),
-
-              // Menu Items
-              _buildMenuItem(
-                context,
-                icon: Icons.emoji_events_outlined,
-                title: 'View Achievements',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AchievementsPage(),
-                    ),
-                  );
-                },
-              ),
-              _buildMenuItem(
-                context,
-                icon: Icons.person_outline,
-                title: 'Edit Profile',
-                onTap: () {},
-              ),
-              _buildMenuItem(
-                context,
-                icon: Icons.map_outlined,
-                title: 'My Trips',
-                onTap: () {},
-              ),
-              _buildMenuItem(
-                context,
-                icon: Icons.settings_outlined,
-                title: 'Settings',
-                onTap: () {},
-              ),
-              _buildMenuItem(
-                context,
-                icon: Icons.help_outline,
-                title: 'Help & Support',
-                onTap: () {},
-              ),
-              _buildMenuItem(
-                context,
-                icon: Icons.logout,
-                title: 'Logout',
-                onTap: () => _handleLogout(context),
-                isDestructive: true,
-              ),
-            ],
+            ),
           ),
-        ),
+    );
+  }
+
+  Widget _buildProfileHeader(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 50,
+            backgroundImage: NetworkImage(userData['avatar'] as String),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            userData['name'] as String,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            userData['location'] as String,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            userData['bio'] as String,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _editProfile,
+            child: const Text('Edit Profile'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStat(String label, String value) {
+  Widget _buildStatsRow(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatItem('Trips', userData['totalTrips'].toString()),
+          _buildStatItem('Countries', userData['countries'].toString()),
+          _buildStatItem('Followers', userData['followers'].toString()),
+          _buildStatItem('Following', userData['following'].toString()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    final theme = Theme.of(context);
     return Column(
       children: [
         Text(
           value,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildMenuItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isDestructive = false,
-  }) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: isDestructive ? Theme.of(context).colorScheme.error : null,
+  Widget _buildLevelProgressionCard() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: LevelProgressionCard(
+        currentLevel: _currentLevel,
+        nextLevel: _nextLevel,
+        progress: _progress,
+        totalPoints: _totalPoints,
       ),
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: isDestructive ? Theme.of(context).colorScheme.error : null,
-        ),
-      ),
-      onTap: onTap,
     );
   }
 
-  Future<void> _handleInvitation(GangInvitation invitation, bool accept) async {
-    try {
-      if (accept) {
-        await _gangService.acceptInvitation(invitation.id, userData['email']);
-      } else {
-        await _gangService.declineInvitation(invitation.id, userData['email']);
-      }
-      _loadGangsAndInvitations();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to ${accept ? 'accept' : 'decline'} invitation'),
-            backgroundColor: Colors.red,
+  Widget _buildPreferencesSection() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Travel Preferences',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        );
-      }
-    }
+          const SizedBox(height: 8),
+          PreferencesViewer(preferences: _preferences),
+        ],
+      ),
+    );
   }
 
-  void _handleLogout(BuildContext context) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
-        ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout'),
+  Widget _buildGangsSection() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'My Gangs',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _myGangs.length,
+            itemBuilder: (context, index) {
+              final gang = _myGangs[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: NetworkImage(gang.avatar),
+                ),
+                title: Text(gang.name),
+                subtitle: Text('${gang.members.length} members'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () => _showGangOptions(gang),
+                ),
+              );
+            },
           ),
         ],
       ),
     );
+  }
+
+  void _editProfile() async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => ProfileEditDialog(userData: userData),
+    );
     
-    if (confirm == true) {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.logout();
-      
-      if (!mounted) return;
-      
-      // Navigate to onboarding page after logout
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const OnboardingPage()),
-        (route) => false, // Remove all previous routes
-      );
+    if (result != null) {
+      setState(() {
+        userData = result;
+      });
     }
+  }
+
+  void _showGangOptions(Gang gang) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Edit Gang'),
+            onTap: () {
+              Navigator.pop(context);
+              _editGang(gang);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person_add),
+            title: const Text('Invite Members'),
+            onTap: () {
+              Navigator.pop(context);
+              _inviteToGang(gang);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.exit_to_app),
+            title: const Text('Leave Gang'),
+            onTap: () {
+              Navigator.pop(context);
+              _leaveGang(gang);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _leaveGang(Gang gang) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave Gang'),
+        content: Text('Are you sure you want to leave ${gang.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              // TODO: Implement leave gang functionality
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Left gang successfully'),
+                ),
+              );
+            },
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    );
   }
 } 

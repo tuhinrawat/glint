@@ -3,6 +3,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:firebase_auth/firebase_auth.dart';  // Temporarily disabled
 import 'firebase_service.dart';
 
+class AppUser {
+  final String uid;
+  final String? displayName;
+  final String? email;
+  final String? photoURL;
+
+  AppUser({
+    required this.uid,
+    this.displayName,
+    this.email,
+    this.photoURL,
+  });
+}
+
 /// Service to manage authentication state and user login/logout
 class AuthService with ChangeNotifier {
   static const String _isLoggedInKey = 'is_logged_in';
@@ -31,6 +45,13 @@ class AuthService with ChangeNotifier {
   String? get userName => _userName;
   String? get userEmail => _userEmail;
   String? get userAvatar => _userAvatar;
+  
+  AppUser? get currentUser => _isLoggedIn ? AppUser(
+    uid: _userId!,
+    displayName: _userName,
+    email: _userEmail,
+    photoURL: _userAvatar,
+  ) : null;
   
   /// Initialize the auth service by loading saved state
   Future<void> initialize() async {
