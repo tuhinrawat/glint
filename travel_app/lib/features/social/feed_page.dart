@@ -192,7 +192,6 @@ class FeedPageState extends State<FeedPage> with SingleTickerProviderStateMixin 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
       extendBody: true,
-      appBar: const GlobalAppBar(),
       body: ListView.builder(
         controller: _scrollController,
         itemCount: _moments.length,

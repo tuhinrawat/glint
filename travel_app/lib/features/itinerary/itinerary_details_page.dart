@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../models/itinerary.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/common_styles.dart';
+import '../../core/services/currency_service.dart';
+import 'edit_activity_dialog.dart';
+import 'dart:math';
 
-// Add these classes at the top level
 class MemberCostAdjustment {
   bool includeHotel;
   bool includeCab;
   bool includeFlight;
-  String? hotelPreference; // 'shared' or 'single'
-  String? cabPreference; // 'shared' or 'own'
+  String? hotelPreference;
+  String? cabPreference;
   num additionalCharges;
   String? notes;
 
@@ -24,24 +28,20 @@ class MemberCostAdjustment {
   num calculateAdjustedCost(num baseCost, num hotelCost, num cabCost, num flightCost, int totalMembers) {
     num adjustedCost = baseCost;
 
-    // Adjust hotel cost
     if (!includeHotel) {
       adjustedCost -= hotelCost / totalMembers;
     } else if (hotelPreference == 'single') {
-      adjustedCost += hotelCost; // Add full room cost instead of shared
+      adjustedCost += hotelCost;
     }
 
-    // Adjust cab cost
     if (!includeCab) {
       adjustedCost -= cabCost / totalMembers;
     }
 
-    // Adjust flight cost
     if (!includeFlight) {
       adjustedCost -= flightCost;
     }
 
-    // Add any additional charges
     adjustedCost += additionalCharges;
 
     return adjustedCost;
@@ -66,7 +66,6 @@ class PaymentStatus {
   });
 }
 
-// Add CostItem class at the top level, before the ItineraryDetailsPage class
 class CostItem {
   final String title;
   final num amount;
@@ -78,20 +77,26 @@ class CostItem {
 
 class ItineraryDetailsPage extends StatefulWidget {
   final Itinerary itinerary;
+  final bool isEditing;
+  final bool onlyUnpaidActivities;
   final String heroTag;
 
   const ItineraryDetailsPage({
-    super.key,
+    Key? key,
     required this.itinerary,
+    this.isEditing = false,
+    this.onlyUnpaidActivities = false,
     required this.heroTag,
-  });
+  }) : super(key: key);
 
   @override
   State<ItineraryDetailsPage> createState() => _ItineraryDetailsPageState();
 }
 
 class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
-  // Add class properties
+  late List<Activity> _activities;
+  late Map<String, bool> _editableActivities;
+  bool _isAddingNewActivity = false;
   final List<String> _selectedMembers = ['You'];
   final List<String> _selectedGangs = [];
   final Map<String, MemberCostAdjustment> _memberAdjustments = {};
@@ -103,20 +108,34 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
   };
 
   int get _totalMemberCount {
-    // Count individual members
     int count = _selectedMembers.length;
-    // Add gang members (assuming average gang size of 4)
     count += _selectedGangs.length * 4;
     return count;
   }
 
-  // Add this method to generate payment records
+  @override
+  void initState() {
+    super.initState();
+    _initializeActivities();
+  }
+
+  void _initializeActivities() {
+    _activities = [];
+    _editableActivities = {};
+    
+    for (var dayPlan in widget.itinerary.dayPlans) {
+      for (var activity in dayPlan.activities) {
+        _activities.add(activity);
+        _editableActivities[activity.name] = true;
+      }
+    }
+  }
+
   List<PaymentStatus> _generatePaymentRecords() {
     final List<PaymentStatus> payments = [];
 
-    // Handle individual members
     for (final member in _selectedMembers) {
-      if (member == 'You') continue; // Skip the host
+      if (member == 'You') continue;
 
       final amount = _calculateAdjustedCostForMember(
         member,
@@ -127,21 +146,20 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
         memberId: member,
         gangId: 'individual',
         amount: amount,
-        payTo: 'You', // Host
+        payTo: 'You',
       ));
     }
 
-    // Handle gang members
     for (final gang in _selectedGangs) {
       final gangMembers = _gangMembers[gang] ?? [];
       for (final member in gangMembers) {
-        final amount = _calculatePerPersonCost(); // Use standard cost for gang members
+        final amount = _calculatePerPersonCost();
 
         payments.add(PaymentStatus(
           memberId: member,
           gangId: gang,
           amount: amount,
-          payTo: 'You', // Host
+          payTo: 'You',
         ));
       }
     }
@@ -149,23 +167,86 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
     return payments;
   }
 
+  num _calculateAdjustedCostForMember(String member, MemberCostAdjustment adjustment) {
+    final baseCost = widget.itinerary.totalCost / _totalMemberCount;
+    final hotelCost = widget.itinerary.suggestedHotelCostPerNight * widget.itinerary.dayPlans.length;
+    final cabCost = widget.itinerary.suggestedCabCostPerDay * widget.itinerary.dayPlans.length;
+    final flightCost = widget.itinerary.suggestedFlightCost;
+
+    return adjustment.calculateAdjustedCost(
+      baseCost,
+      hotelCost,
+      cabCost,
+      flightCost,
+      _totalMemberCount,
+    );
+  }
+
+  num _calculatePerPersonCost() {
+    return widget.itinerary.totalCost / _totalMemberCount;
+  }
+
+  void _editActivity(Activity activity) async {
+    final result = await showDialog<Activity>(
+      context: context,
+      builder: (context) => EditActivityDialog(
+        activity: activity,
+        availableSeats: _checkAvailableCapacity(),
+        existingBookings: widget.itinerary.toJson(),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        final index = _activities.indexWhere((a) => a.name == activity.name);
+        if (index != -1) {
+          _activities[index] = result;
+        }
+      });
+    }
+  }
+
+  void _deleteActivity(Activity activity) {
+    setState(() {
+      _activities.removeWhere((a) => a.name == activity.name);
+    });
+  }
+
+  int _checkAvailableCapacity() {
+    int minAvailable = 999;
+    
+    for (var dayPlan in widget.itinerary.dayPlans) {
+      if (dayPlan.flight != null) {
+        minAvailable = min(minAvailable, 200);
+      }
+      if (dayPlan.hotel != null) {
+        minAvailable = min(minAvailable, 4 * dayPlan.hotel!.name.length);
+      }
+      if (dayPlan.cab != null) {
+        minAvailable = min(minAvailable, 4);
+      }
+    }
+    
+    return minAvailable;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final duration = widget.itinerary.endDate.difference(widget.itinerary.startDate).inDays + 1;
+    final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
         title: Text(
           widget.itinerary.destination,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: theme.colorScheme.surface,
         elevation: 0,
         iconTheme: IconThemeData(
-          color: Theme.of(context).colorScheme.onSurface,
+          color: theme.colorScheme.onSurface,
           size: 24,
         ),
         actions: [
@@ -173,7 +254,7 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
             icon: Icon(
               Icons.share_outlined,
               size: 20,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: theme.colorScheme.onSurface,
             ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -185,7 +266,7 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
             icon: Icon(
               Icons.bookmark_outline,
               size: 20,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: theme.colorScheme.onSurface,
             ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -195,10 +276,28 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: ListView(
+        padding: EdgeInsets.zero,
           children: [
+            // Hero image and header
+            Stack(
+                children: [
+                  Hero(
+                tag: widget.heroTag ?? 'itinerary_${widget.itinerary.id}',
+                    child: Image.network(
+                      widget.itinerary.images.first,
+                  height: 300,
+                  width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                      height: 300,
+                      color: theme.colorScheme.surfaceVariant,
+                      child: Icon(
+                                  Icons.image_not_supported_outlined,
+                        size: 64,
+                        color: theme.colorScheme.onSurfaceVariant,
+=======
             // Hero Image
             SizedBox(
               height: 240,
@@ -258,7 +357,7 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
                       children: [
                         Text(
                           widget.itinerary.destination,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          style: theme.textTheme.headlineSmall?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -269,7 +368,7 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
                             _buildHeaderChip(
                               context,
                               Icons.calendar_today,
-                              '$duration days',
+                              '${widget.itinerary.dayPlans.length} days',
                             ),
                             const SizedBox(width: 12),
                             _buildHeaderChip(
@@ -291,14 +390,20 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
                   ),
                 ],
               ),
-            ),
-            
-            // Overview
+          // Trip details
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.1),
+=======
                   Text(
                     'Overview',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -314,6 +419,7 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+>>>>>>> main
                       ),
                     ),
                     child: Column(
@@ -571,6 +677,7 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
@@ -584,6 +691,25 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(BuildContext context, String label, String value, IconData icon) {
+    final theme = Theme.of(context);
+    return Row(
+        children: [
+          Icon(
+            icon,
+            size: 20,
+          color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Text(
+          label,
+          style: theme.textTheme.bodyLarge,
+          ),
           const Spacer(),
           Text(
             value,
@@ -593,7 +719,6 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
             ),
           ),
         ],
-      ),
     );
   }
 
@@ -645,10 +770,35 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
                   '₹${dayPlan.totalCost.round()}',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            if (dayPlan.flight != null) ...[
+              _buildTransportationRow(
+                context,
+              Icons.flight,
+                '${dayPlan.flight!.airline} - ${dayPlan.flight!.from} to ${dayPlan.flight!.to}',
+                dayPlan.flight!.cost,
+              ),
+            const SizedBox(height: 8),
+            ],
+            if (dayPlan.hotel != null) ...[
+              _buildTransportationRow(
+                context,
+                Icons.hotel,
+                dayPlan.hotel!.name,
+                dayPlan.hotel!.costPerNight,
+                          ),
+                          const SizedBox(height: 8),
+            ],
+            if (dayPlan.cab != null) ...[
+              _buildTransportationRow(
+                context,
+            Icons.local_taxi,
+                '${dayPlan.cab!.type} - ${dayPlan.cab!.duration ?? "${dayPlan.cab!.from} to ${dayPlan.cab!.to}"}',
+                dayPlan.cab!.cost,
             ),
             const SizedBox(height: 16),
             ...List.generate(dayPlan.activities.length, (index) {
@@ -658,6 +808,33 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTransportationRow(BuildContext context, IconData icon, String details, double cost) {
+    final theme = Theme.of(context);
+    return Row(
+            children: [
+              Icon(
+          icon,
+          size: 20,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+          child: Text(
+            details,
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
+        Text(
+          CurrencyService.formatAmount(cost),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1754,33 +1931,6 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
     );
   }
 
-  num _calculatePerPersonCost() {
-    final totalMembers = _totalMemberCount;
-    if (totalMembers == 0) return 0;
-
-    // Individual costs (not shared)
-    final flightCost = 4999;
-    final activityCost = _calculateActivitiesCost();
-    final individualCosts = flightCost + activityCost;
-
-    // Shared costs
-    final hotelCost = 12999;
-    final cabCost = 2500;
-    final sharedCosts = (hotelCost + cabCost) / totalMembers;
-
-    return individualCosts + sharedCosts;
-  }
-
-  num _calculateActivitiesCost() {
-    return widget.itinerary.dayPlans.fold<num>(
-      0,
-      (sum, day) => sum + day.activities.fold<num>(
-        0,
-        (activitySum, activity) => activitySum + activity.cost,
-      ),
-    );
-  }
-
   void _showFullItineraryBookingDialog(BuildContext context) {
     final theme = Theme.of(context);
     
@@ -2425,12 +2575,12 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
     }
   }
 
-  num _calculateAdjustedCostForMember(String memberId, MemberCostAdjustment adjustment) {
-    final baseCost = _calculatePerPersonCost();
-    final hotelCost = 12999.0;  // Example hotel cost
-    final cabCost = 2500.0;     // Example cab cost
-    final flightCost = 4999.0;  // Example flight cost
-    
+  num _calculateAdjustedCostForMember(String member, MemberCostAdjustment adjustment) {
+    final baseCost = widget.itinerary.totalCost / _totalMemberCount;
+    final hotelCost = widget.itinerary.suggestedHotelCostPerNight * widget.itinerary.dayPlans.length;
+    final cabCost = widget.itinerary.suggestedCabCostPerDay * widget.itinerary.dayPlans.length;
+    final flightCost = widget.itinerary.suggestedFlightCost;
+
     return adjustment.calculateAdjustedCost(
       baseCost,
       hotelCost,
