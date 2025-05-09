@@ -53,6 +53,21 @@ class _ExplorePageState extends State<ExplorePage> {
       'name': 'Kerala',
       'subtitle': 'Backwaters & Culture',
       'image': 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2'
+    },
+    {
+      'name': 'Ladakh',
+      'subtitle': 'High Altitude & Serenity',
+      'image': 'https://images.unsplash.com/photo-1589556264800-08294b7d5337'
+    },
+    {
+      'name': 'Rajasthan',
+      'subtitle': 'Desert & Heritage',
+      'image': 'https://images.unsplash.com/photo-1599661046289-e31897846e41'
+    },
+    {
+      'name': 'Andaman',
+      'subtitle': 'Islands & Beaches',
+      'image': 'https://images.unsplash.com/photo-1517299321609-52687d1bc55a'
     }
   ];
 
@@ -165,53 +180,132 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 
   Widget _buildItineraryCard(Itinerary itinerary) {
+    final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      shadowColor: Colors.black12,
+      color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            child: Image.network(
-              itinerary.images.first,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ItineraryDetailsPage(
+                itinerary: itinerary,
+                heroTag: 'itinerary_${itinerary.id}',
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  itinerary.destination,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${CurrencyService.formatAmount(itinerary.totalCost)} • ${itinerary.numberOfPeople} people',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Itinerary Image
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Hero(
+                    tag: 'itinerary_${itinerary.id}',
+                    child: Image.network(
+                      itinerary.images.first,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.6),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            // Cost and Details Section
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Total Cost',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '₹${itinerary.totalCost.toStringAsFixed(0)}',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ItineraryDetailsPage(
+                                itinerary: itinerary,
+                                heroTag: 'itinerary_${itinerary.id}',
+                              ),
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 18,
+                          color: theme.colorScheme.primary,
+                        ),
+                        label: Text(
+                          'View Details',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: theme.colorScheme.background,
       body: _isLoading
         ? Center(
             child: SpinKitPulse(
-              color: Theme.of(context).colorScheme.primary,
+              color: theme.colorScheme.primary,
               size: 50.0,
             ),
           )
@@ -223,70 +317,42 @@ class _ExplorePageState extends State<ExplorePage> {
                   child: _buildSearchBar(),
                 ),
               ),
+              // Recommended Itineraries
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'Popular Destinations',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 180,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: _popularDestinations.length,
-                    itemBuilder: (context, index) {
-                      final destination = _popularDestinations[index];
-                      return Container(
-                        width: 160,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Card(
-                          clipBehavior: Clip.antiAlias,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 20,
+                            color: theme.colorScheme.primary,
                           ),
-                          child: Stack(
-                            children: [
-                              Positioned.fill(
-                                child: Image.network(
-                                  destination['image'] as String,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 8,
-                                left: 8,
-                                right: 8,
-                                child: Text(
-                                  destination['name'] as String,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          const SizedBox(width: 8),
+                          Text(
+                            'AI Recommended Itineraries',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onBackground,
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Filter or sort itineraries
+                        },
+                        child: Text(
+                          'Filter',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.primary,
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'Suggested Itineraries',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
