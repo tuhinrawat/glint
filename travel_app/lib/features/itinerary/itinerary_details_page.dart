@@ -6,6 +6,81 @@ import '../../core/services/currency_service.dart';
 import 'edit_activity_dialog.dart';
 import 'dart:math';
 
+// Add these classes at the top level
+class MemberCostAdjustment {
+  bool includeHotel;
+  bool includeCab;
+  bool includeFlight;
+  String? hotelPreference; // 'shared' or 'single'
+  String? cabPreference; // 'shared' or 'own'
+  num additionalCharges;
+  String? notes;
+
+  MemberCostAdjustment({
+    this.includeHotel = true,
+    this.includeCab = true,
+    this.includeFlight = true,
+    this.hotelPreference = 'shared',
+    this.cabPreference = 'shared',
+    this.additionalCharges = 0,
+    this.notes,
+  });
+
+  num calculateAdjustedCost(num baseCost, num hotelCost, num cabCost, num flightCost, int totalMembers) {
+    num adjustedCost = baseCost;
+
+    // Adjust hotel cost
+    if (!includeHotel) {
+      adjustedCost -= hotelCost / totalMembers;
+    } else if (hotelPreference == 'single') {
+      adjustedCost += hotelCost; // Add full room cost instead of shared
+    }
+
+    // Adjust cab cost
+    if (!includeCab) {
+      adjustedCost -= cabCost / totalMembers;
+    }
+
+    // Adjust flight cost
+    if (!includeFlight) {
+      adjustedCost -= flightCost;
+    }
+
+    // Add any additional charges
+    adjustedCost += additionalCharges;
+
+    return adjustedCost;
+  }
+}
+
+class PaymentStatus {
+  final String memberId;
+  final String gangId;
+  final num amount;
+  final String payTo;
+  final bool isPaid;
+  final DateTime? paidDate;
+
+  PaymentStatus({
+    required this.memberId,
+    required this.gangId,
+    required this.amount,
+    required this.payTo,
+    this.isPaid = false,
+    this.paidDate,
+  });
+}
+
+// Add CostItem class at the top level, before the ItineraryDetailsPage class
+class CostItem {
+  final String title;
+  final num amount;
+  final VoidCallback? onEdit;
+  final String? subtitle;
+
+  CostItem(this.title, this.amount, {this.onEdit, this.subtitle});
+}
+
 class ItineraryDetailsPage extends StatefulWidget {
   final Itinerary itinerary;
   final bool isEditing;
