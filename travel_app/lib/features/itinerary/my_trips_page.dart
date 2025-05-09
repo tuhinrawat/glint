@@ -228,8 +228,7 @@ class _MyTripsPageState extends State<MyTripsPage> with SingleTickerProviderStat
           MaterialPageRoute(
             builder: (context) => ItineraryDetailsPage(
               itinerary: trip,
-              isEditing: true,
-              onlyUnpaidActivities: true,
+              heroTag: 'itinerary_${trip.id}',
             ),
           ),
         );

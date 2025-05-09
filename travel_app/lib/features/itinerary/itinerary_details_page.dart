@@ -168,18 +168,31 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
   }
 
   num _calculateAdjustedCostForMember(String member, MemberCostAdjustment adjustment) {
-    final baseCost = widget.itinerary.totalCost / _totalMemberCount;
+    final baseCost = widget.itinerary.totalCost / widget.itinerary.numberOfPeople;
     final hotelCost = widget.itinerary.suggestedHotelCostPerNight * widget.itinerary.dayPlans.length;
     final cabCost = widget.itinerary.suggestedCabCostPerDay * widget.itinerary.dayPlans.length;
     final flightCost = widget.itinerary.suggestedFlightCost;
 
-    return adjustment.calculateAdjustedCost(
-      baseCost,
-      hotelCost,
-      cabCost,
-      flightCost,
-      _totalMemberCount,
-    );
+    num adjustedCost = baseCost;
+
+    if (!adjustment.includeHotel) {
+      adjustedCost -= hotelCost / widget.itinerary.numberOfPeople;
+    } else if (adjustment.hotelPreference == 'single') {
+      adjustedCost += hotelCost / widget.itinerary.numberOfPeople;
+    }
+
+    if (!adjustment.includeCab) {
+      adjustedCost -= cabCost / widget.itinerary.numberOfPeople;
+    } else if (adjustment.cabPreference == 'private') {
+      adjustedCost += cabCost / widget.itinerary.numberOfPeople;
+    }
+
+    if (!adjustment.includeFlight) {
+      adjustedCost -= flightCost / widget.itinerary.numberOfPeople;
+    }
+
+    adjustedCost += adjustment.additionalCharges;
+    return adjustedCost;
   }
 
   num _calculatePerPersonCost() {
@@ -278,369 +291,124 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
       ),
       body: ListView(
         padding: EdgeInsets.zero,
-          children: [
-            // Hero image and header
-            Stack(
-                children: [
-                  Hero(
-                tag: widget.heroTag ?? 'itinerary_${widget.itinerary.id}',
-                    child: Image.network(
-                      widget.itinerary.images.first,
-                  height: 300,
-                  width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                      height: 300,
-                      color: theme.colorScheme.surfaceVariant,
-                      child: Icon(
-                                  Icons.image_not_supported_outlined,
-                        size: 64,
-                        color: theme.colorScheme.onSurfaceVariant,
-=======
-            // Hero Image
-            SizedBox(
-              height: 240,
-              width: double.infinity,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Hero(
-                    tag: widget.heroTag,
-                    child: Image.network(
-                      widget.itinerary.images.first,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Theme.of(context).colorScheme.surfaceVariant,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.image_not_supported_outlined,
-                                  size: 48,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Image not available',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.7),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 16,
-                    left: 16,
-                    right: 16,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.itinerary.destination,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _buildHeaderChip(
-                              context,
-                              Icons.calendar_today,
-                              '${widget.itinerary.dayPlans.length} days',
-                            ),
-                            const SizedBox(width: 12),
-                            _buildHeaderChip(
-                              context,
-                              Icons.person_outline,
-                              '${widget.itinerary.numberOfPeople} people',
-                            ),
-                            const SizedBox(width: 12),
-                            _buildHeaderChip(
-                              context,
-                              Icons.star,
-                              widget.itinerary.rating.toStringAsFixed(1),
-                              iconColor: Colors.amber,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-          // Trip details
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                      color: theme.colorScheme.outline.withOpacity(0.1),
-=======
-                  Text(
-                    'Overview',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onBackground,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
->>>>>>> main
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildInfoRow(
-                          context, 
-                          'Total Cost', 
-                          '₹${widget.itinerary.totalCost.round()}',
-                          Icons.currency_rupee,
-                        ),
-                        Divider(
-                          height: 24,
-                          thickness: 1,
-                          color: Theme.of(context).colorScheme.outline.withOpacity(0.08),
-                        ),
-                        _buildInfoRow(
-                          context, 
-                          'Start Date', 
-                          '${widget.itinerary.startDate.day}/${widget.itinerary.startDate.month}/${widget.itinerary.startDate.year}',
-                          Icons.calendar_today,
-                        ),
-                        Divider(
-                          height: 24,
-                          thickness: 1,
-                          color: Theme.of(context).colorScheme.outline.withOpacity(0.08),
-                        ),
-                        _buildInfoRow(
-                          context, 
-                          'End Date', 
-                          '${widget.itinerary.endDate.day}/${widget.itinerary.endDate.month}/${widget.itinerary.endDate.year}',
-                          Icons.event,
-                        ),
-                        Divider(
-                          height: 24,
-                          thickness: 1,
-                          color: Theme.of(context).colorScheme.outline.withOpacity(0.08),
-                        ),
-                        _buildInfoRow(
-                          context, 
-                          'Created By', 
-                          widget.itinerary.creatorName,
-                          Icons.person,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Day Plans
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Itinerary',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onBackground,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...List.generate(widget.itinerary.dayPlans.length, (index) {
-                    final dayPlan = widget.itinerary.dayPlans[index];
-                    return _buildDayPlanCard(context, dayPlan, index + 1);
-                  }),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Book Now Button
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Group Members Section
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.group_outlined,
-                              color: Theme.of(context).colorScheme.primary,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Trip Members',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const Spacer(),
-                            TextButton(
-                              onPressed: () => _showAddMembersDialog(context),
-                              child: Text(
-                                'Add Members',
-                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
+        children: [
+          // Hero image and header
+          SizedBox(
+            height: 240,
+            width: double.infinity,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Hero(
+                  tag: widget.heroTag,
+                  child: Image.network(
+                    widget.itinerary.images.first,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: theme.colorScheme.surfaceVariant,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildMemberChip(
-                                context,
-                                'You',
-                                isHost: true,
+                              Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 48,
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
-                              const SizedBox(width: 8),
-                              _buildMemberChip(
-                                context,
-                                'Add Gang',
-                                isAddGang: true,
-                                onTap: () => _showGangSelectionDialog(context),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Image not available',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             ],
                           ),
                         ),
+                      );
+                    },
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.7),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // Total Cost Summary
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Total Cost',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '₹${widget.itinerary.totalCost.round()}',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Text(
-                              'Per Person',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '₹${(widget.itinerary.totalCost / widget.itinerary.numberOfPeople).round()}',
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Book Now Button
-                  ElevatedButton(
-                    onPressed: () => _showFullItineraryBookingDialog(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      minimumSize: const Size.fromHeight(56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      'Book Full Itinerary',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          // Trip details
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildInfoRow(
+                        context,
+                        'Total Cost',
+                        '₹${widget.itinerary.totalCost.round()}',
+                        Icons.currency_rupee,
+                      ),
+                      Divider(
+                        height: 24,
+                        thickness: 1,
+                        color: theme.colorScheme.outline.withOpacity(0.08),
+                      ),
+                      _buildInfoRow(
+                        context,
+                        'Start Date',
+                        '${widget.itinerary.startDate.day}/${widget.itinerary.startDate.month}/${widget.itinerary.startDate.year}',
+                        Icons.calendar_today,
+                      ),
+                      Divider(
+                        height: 24,
+                        thickness: 1,
+                        color: theme.colorScheme.outline.withOpacity(0.08),
+                      ),
+                      _buildInfoRow(
+                        context,
+                        'End Date',
+                        '${widget.itinerary.endDate.day}/${widget.itinerary.endDate.month}/${widget.itinerary.endDate.year}',
+                        Icons.event,
+                      ),
+                      Divider(
+                        height: 24,
+                        thickness: 1,
+                        color: theme.colorScheme.outline.withOpacity(0.08),
+                      ),
+                      _buildInfoRow(
+                        context,
+                        'Created By',
+                        widget.itinerary.creatorName,
+                        Icons.person,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -672,53 +440,35 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, String title, String value, IconData icon) {
+  Widget _buildInfoRow(BuildContext context, String label, String value, IconData icon) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: theme.colorScheme.primary,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          Icon(icon, color: theme.colorScheme.primary),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onBackground,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoRow(BuildContext context, String label, String value, IconData icon) {
-    final theme = Theme.of(context);
-    return Row(
-        children: [
-          Icon(
-            icon,
-            size: 20,
-          color: theme.colorScheme.primary,
-          ),
-          const SizedBox(width: 12),
-          Text(
-          label,
-          style: theme.textTheme.bodyLarge,
-          ),
-          const Spacer(),
-          Text(
-            value,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
     );
   }
 
@@ -778,11 +528,11 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
             if (dayPlan.flight != null) ...[
               _buildTransportationRow(
                 context,
-              Icons.flight,
+                Icons.flight,
                 '${dayPlan.flight!.airline} - ${dayPlan.flight!.from} to ${dayPlan.flight!.to}',
                 dayPlan.flight!.cost,
               ),
-            const SizedBox(height: 8),
+              const SizedBox(height: 8),
             ],
             if (dayPlan.hotel != null) ...[
               _buildTransportationRow(
@@ -790,17 +540,18 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
                 Icons.hotel,
                 dayPlan.hotel!.name,
                 dayPlan.hotel!.costPerNight,
-                          ),
-                          const SizedBox(height: 8),
+              ),
+              const SizedBox(height: 8),
             ],
             if (dayPlan.cab != null) ...[
               _buildTransportationRow(
                 context,
-            Icons.local_taxi,
+                Icons.local_taxi,
                 '${dayPlan.cab!.type} - ${dayPlan.cab!.duration ?? "${dayPlan.cab!.from} to ${dayPlan.cab!.to}"}',
                 dayPlan.cab!.cost,
-            ),
-            const SizedBox(height: 16),
+              ),
+              const SizedBox(height: 16),
+            ],
             ...List.generate(dayPlan.activities.length, (index) {
               final activity = dayPlan.activities[index];
               return _buildActivityItem(context, activity, index);
@@ -814,23 +565,22 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
   Widget _buildTransportationRow(BuildContext context, IconData icon, String details, double cost) {
     final theme = Theme.of(context);
     return Row(
-            children: [
-              Icon(
+      children: [
+        Icon(
           icon,
           size: 20,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
           child: Text(
             details,
             style: theme.textTheme.bodyMedium,
           ),
         ),
         Text(
-          CurrencyService.formatAmount(cost),
+          '₹${cost.round()}',
           style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
             color: theme.colorScheme.primary,
           ),
         ),
@@ -2575,21 +2325,6 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
     }
   }
 
-  num _calculateAdjustedCostForMember(String member, MemberCostAdjustment adjustment) {
-    final baseCost = widget.itinerary.totalCost / _totalMemberCount;
-    final hotelCost = widget.itinerary.suggestedHotelCostPerNight * widget.itinerary.dayPlans.length;
-    final cabCost = widget.itinerary.suggestedCabCostPerDay * widget.itinerary.dayPlans.length;
-    final flightCost = widget.itinerary.suggestedFlightCost;
-
-    return adjustment.calculateAdjustedCost(
-      baseCost,
-      hotelCost,
-      cabCost,
-      flightCost,
-      _totalMemberCount,
-    );
-  }
-
   void _showMemberCostAdjustmentDialog(BuildContext context, String memberId) {
     final theme = Theme.of(context);
     final adjustment = _memberAdjustments[memberId] ?? MemberCostAdjustment();
@@ -3092,6 +2827,16 @@ class _ItineraryDetailsPageState extends State<ItineraryDetailsPage> {
         ),
       ),
     );
+  }
+
+  num _calculateActivitiesCost() {
+    num total = 0;
+    for (var dayPlan in widget.itinerary.dayPlans) {
+      for (var activity in dayPlan.activities) {
+        total += activity.cost;
+      }
+    }
+    return total;
   }
 }
 
