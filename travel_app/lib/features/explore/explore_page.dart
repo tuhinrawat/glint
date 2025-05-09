@@ -51,7 +51,7 @@ class _ExplorePageState extends State<ExplorePage> with SingleTickerProviderStat
     {
       'name': 'Goa',
       'subtitle': 'Beaches & Nightlife',
-      'image': 'https://images.unsplash.com/photo-1587922546307-776227941871'
+      'image': 'https://images.unsplash.com/photo-1582972236019-ea4af5ffe587'
     },
     {
       'name': 'Manali',
@@ -61,7 +61,7 @@ class _ExplorePageState extends State<ExplorePage> with SingleTickerProviderStat
     {
       'name': 'Kerala',
       'subtitle': 'Backwaters & Culture',
-      'image': 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944'
+      'image': 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2'
     },
     {
       'name': 'Ladakh',
@@ -71,12 +71,12 @@ class _ExplorePageState extends State<ExplorePage> with SingleTickerProviderStat
     {
       'name': 'Rajasthan',
       'subtitle': 'Desert & Heritage',
-      'image': 'https://images.unsplash.com/photo-1580391564590-aeca65c5e2d3'
+      'image': 'https://images.unsplash.com/photo-1599661046289-e31897846e41'
     },
     {
       'name': 'Andaman',
       'subtitle': 'Islands & Beaches',
-      'image': 'https://images.unsplash.com/photo-1501306476490-b818e9a663a3'
+      'image': 'https://images.unsplash.com/photo-1517299321609-52687d1bc55a'
     },
   ];
 
@@ -401,12 +401,22 @@ class _ExplorePageState extends State<ExplorePage> with SingleTickerProviderStat
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Recommended Itineraries',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.onBackground,
-                          ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.auto_awesome,
+                              size: 20,
+                              color: theme.colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'AI Recommended Itineraries',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onBackground,
+                              ),
+                            ),
+                          ],
                         ),
                         TextButton(
                           onPressed: () {
@@ -648,6 +658,7 @@ class _ExplorePageState extends State<ExplorePage> with SingleTickerProviderStat
       floatingActionButton: _isChatOpen ? null : Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 56), // 56 is navbar height
         child: FloatingActionButton(
+          heroTag: 'chat_fab',
           onPressed: _toggleChat,
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
@@ -713,6 +724,7 @@ class _ExplorePageState extends State<ExplorePage> with SingleTickerProviderStat
             MaterialPageRoute(
               builder: (context) => ItineraryDetailsPage(
                 itinerary: itinerary,
+                heroTag: 'itinerary_${itinerary.id}',
               ),
             ),
           );
@@ -727,10 +739,13 @@ class _ExplorePageState extends State<ExplorePage> with SingleTickerProviderStat
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  AppComponents.cachedImage(
-                    imageUrl: itinerary.images.isNotEmpty
-                      ? itinerary.images.first
-                      : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
+                  Hero(
+                    tag: 'itinerary_${itinerary.id}',
+                    child: AppComponents.cachedImage(
+                      imageUrl: itinerary.images.isNotEmpty
+                        ? itinerary.images.first
+                        : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
+                    ),
                   ),
                   Container(
                     decoration: BoxDecoration(
@@ -843,6 +858,7 @@ class _ExplorePageState extends State<ExplorePage> with SingleTickerProviderStat
                             MaterialPageRoute(
                               builder: (context) => ItineraryDetailsPage(
                                 itinerary: itinerary,
+                                heroTag: 'itinerary_${itinerary.id}',
                               ),
                             ),
                           );
